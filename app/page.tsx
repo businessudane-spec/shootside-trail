@@ -7,7 +7,6 @@
   import Image from "next/image";
   import { FaWhatsapp, FaBars, FaTimes } from "react-icons/fa";
   import { useState, useEffect } from "react";
-  import { supabase } from "@/lib/supabaseClient";
 
   export default function Home() {
     const [scrolled, setScrolled] = useState(false);
@@ -544,4 +543,13 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
 
     );
   }
+someVariable.then(result => {
+    if (result && typeof result.select === 'function') {
+        result.select(); // optional: returns the inserted row
+    } else {
+        console.error("select method does not exist on the result.");
+    }
+}).catch(error => {
+    console.error("Error resolving someVariable:", error);
+});
 
