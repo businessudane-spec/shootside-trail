@@ -543,13 +543,5 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
 
     );
   }
-someVariable.then(result => {
-    if (result && typeof result.select === 'function') {
-        result.select(); // optional: returns the inserted row
-    } else {
-        console.error("select method does not exist on the result.");
-    }
-}).catch(error => {
-    console.error("Error resolving someVariable:", error);
-});
+
 
