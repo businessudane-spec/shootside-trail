@@ -85,18 +85,18 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
   //     },
   //   ]);
 
-  if (error) {
-    console.error("Supabase insert error:", error);
-    alert("Something went wrong. Please try again later.");
-    return;
-  }
+//   if (error) {
+//     console.error("Supabase insert error:", error);
+//     alert("Something went wrong. Please try again later.");
+//     return;
+//   }
 
-  console.log("Form submitted:", data);
-  alert("Thank you! Your message has been sent.");
+//   console.log("Form submitted:", data);
+//   alert("Thank you! Your message has been sent.");
 
-  // Clear the form
-  setFormData({ name: "", email: "", message: "" });
-};
+//   // Clear the form
+//   setFormData({ name: "", email: "", message: "" });
+// };
 
 
     return (
