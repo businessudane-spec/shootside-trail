@@ -74,16 +74,16 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
 
-  // Insert into Supabase
-  const { data, error } = await supabase
-    .from("contacts") // your table name
-    .insert([
-      {
-        name: formData.name,
-        email: formData.email,
-        message: formData.message,
-      },
-    ]);
+  // // Insert into Supabase
+  // const { data, error } = await supabase
+  //   .from("contacts") // your table name
+  //   .insert([
+  //     {
+  //       name: formData.name,
+  //       email: formData.email,
+  //       message: formData.message,
+  //     },
+  //   ]);
 
   if (error) {
     console.error("Supabase insert error:", error);
