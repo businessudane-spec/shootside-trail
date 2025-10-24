@@ -1,0 +1,6 @@
+[user]
+    name = businessudane-spec
+    email = your-github-email@example.com
+
+[credential]
+    helper = store
