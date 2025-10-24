@@ -1,4 +1,4 @@
-  "use client";
+"use client";
   import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
   import { AuroraBackground } from "@/components/ui/aurora-background";
   import { HoverEffect } from "@/components/ui/card-hover-effect";
@@ -84,8 +84,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
         email: formData.email,
         message: formData.message,
       },
-    ])
-    .select(); // optional: returns the inserted row
+    ]);
 
   if (error) {
     console.error("Supabase insert error:", error);
