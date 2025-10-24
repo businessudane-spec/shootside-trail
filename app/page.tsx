@@ -1,106 +1,98 @@
 "use client";
-  import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
-  import { AuroraBackground } from "@/components/ui/aurora-background";
-  import { HoverEffect } from "@/components/ui/card-hover-effect";
-  import { motion } from "motion/react";
-  // import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
-  import Image from "next/image";
-  import { FaWhatsapp, FaBars, FaTimes } from "react-icons/fa";
-  import { useState, useEffect } from "react";
+import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
+import { AuroraBackground } from "@/components/ui/aurora-background";
+import { HoverEffect } from "@/components/ui/card-hover-effect";
+import { motion } from "motion/react";
+import Image from "next/image";
+import { FaWhatsapp, FaBars, FaTimes } from "react-icons/fa";
+import { useState, useEffect } from "react";
 
-  export default function Home() {
-    const [scrolled, setScrolled] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
+export default function Home() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-    useEffect(() => {
-      const handleScroll = () => {
-        setScrolled(window.scrollY > 30);
-      };
-      window.addEventListener("scroll", handleScroll);
-      return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 30);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-    const projects = [
-  {
-    title: "Branding Services",
-    description:
-      "Logo & Brand Identity, Print Design (Brochures, etc.), Social Media Kits, Stationery & Merchandise, Google Business Optimization",
-    link: "#contact",
-  },
-  {
-    title: "Mobile App Development",
-    description:
-      "iOS & Android App Development, UI/UX Design, App Store Deployment, Maintenance & Updates",
-    link: "#m",
-  },
-  {
-    title: "Marketing Services",
-    description:
-      "Social Media Marketing, Search Engine Optimization (SEO), Paid Ads (Google, Facebook, Instagram), Campaign Strategy & Analytics",
-    link: "#contat",
-  },
-  {
-    title: "Web Development",
-    description:
-      "Custom Websites, E-Commerce Solutions, CMS (WordPress, Shopify), Web App Development, Performance Optimization",
-    link: "#web",
-  },
-  {
-    title: "Content Creation",
-    description:
-      "Photography & Videography, social media content creation, event coverage, Creative Campaign Content",
-    link: "#content",
-  },
-  {
-    title: "IT Consulting & Support",
-    description:
-      "Technology Strategy, Cloud Solutions, Cybersecurity, Software Integration, Ongoing Technical Support",
-    link: "#it",
-  },
-];
+  const projects = [
+    {
+      title: "Branding Services",
+      description:
+        "Logo & Brand Identity, Print Design (Brochures, etc.), Social Media Kits, Stationery & Merchandise, Google Business Optimization",
+      link: "#contact",
+    },
+    {
+      title: "Mobile App Development",
+      description:
+        "iOS & Android App Development, UI/UX Design, App Store Deployment, Maintenance & Updates",
+      link: "#m",
+    },
+    {
+      title: "Marketing Services",
+      description:
+        "Social Media Marketing, Search Engine Optimization (SEO), Paid Ads (Google, Facebook, Instagram), Campaign Strategy & Analytics",
+      link: "#contat",
+    },
+    {
+      title: "Web Development",
+      description:
+        "Custom Websites, E-Commerce Solutions, CMS (WordPress, Shopify), Web App Development, Performance Optimization",
+      link: "#web",
+    },
+    {
+      title: "Content Creation",
+      description:
+        "Photography & Videography, social media content creation, event coverage, Creative Campaign Content",
+      link: "#content",
+    },
+    {
+      title: "IT Consulting & Support",
+      description:
+        "Technology Strategy, Cloud Solutions, Cybersecurity, Software Integration, Ongoing Technical Support",
+      link: "#it",
+    },
+  ];
 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
 
-    
-const [formData, setFormData] = useState({
-  name: "",
-  email: "",
-  message: "",
-});
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  setFormData({ ...formData, [e.target.name]: e.target.value });
-};
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+    // // Insert into Supabase
+    // const { data, error } = await supabase
+    //   .from("contacts")
+    //   .insert([
+    //     { name: formData.name, email: formData.email, message: formData.message },
+    //   ]);
 
-  // // Insert into Supabase
-  // const { data, error } = await supabase
-  //   .from("contacts") // your table name
-  //   .insert([
-  //     {
-  //       name: formData.name,
-  //       email: formData.email,
-  //       message: formData.message,
-  //     },
-  //   ]);
+    // if (error) {
+    //   console.error("Supabase insert error:", error);
+    //   alert("Something went wrong. Please try again later.");
+    //   return;
+    // }
 
-//   if (error) {
-//     console.error("Supabase insert error:", error);
-//     alert("Something went wrong. Please try again later.");
-//     return;
-//   }
+    // console.log("Form submitted:", data);
+    alert("Thank you! Your message has been sent.");
+    setFormData({ name: "", email: "", message: "" });
+  }; // ✅ properly closed
 
-//   console.log("Form submitted:", data);
-//   alert("Thank you! Your message has been sent.");
-
-//   // Clear the form
-//   setFormData({ name: "", email: "", message: "" });
-// };
-
-
-    return (
-      <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
+  return (
+    <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
         {/* Floating Glass Header */}
         <header
           className={`fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50 rounded-2xl px-6 py-3 flex items-center justify-between backdrop-blur-md border border-white/10 shadow-lg transition-all duration-300 ${
@@ -545,4 +537,4 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
   }
 
 
-  }
+  
