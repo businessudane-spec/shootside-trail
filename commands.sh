@@ -7,10 +7,16 @@ git add .
 # Create initial commit
 git commit -m "initial commit"
 
-# Add remote (replace YOUR_USERNAME with your GitHub username)
-git remote add origin https://github.com/YOUR_USERNAME/shootside-trail.git
+# Remove existing remote
+git remote remove origin
 
-# Push to main branch
+# Add new remote with correct credentials
+git remote add origin https://businessudane-spec@github.com/businessudane-spec/shootside-trail.git
+
+# Verify remote
+git remote -v
+
+# Push to main (you'll be prompted for GitHub password or token)
 git push -u origin main
 
 # Remove old email
