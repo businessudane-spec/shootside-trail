@@ -92,7 +92,7 @@ export default function Home() {
     alert("Thank you! Your message has been sent.");
     setFormData({ name: "", email: "", message: "" });
   }; // ✅ properly closed
-const handleScroll = (id) => {
+const handleScroll = (id: string) => {
   const section = document.querySelector(id);
   if (section) {
     const headerOffset = 80; // adjust based on your header height
