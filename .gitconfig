@@ -1,0 +1,9 @@
+[user]
+    name = businessudane-spec
+    email = business.udane@gmail.com
+
+[core]
+    autocrlf = true
+
+[credential]
+    helper = store
