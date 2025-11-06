@@ -1,21 +1,20 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
-
-import { useState } from "react";
+import React, { useState } from "react"; // ✅ import React for React.ReactNode
 
 export const HoverEffect = ({
   items,
   className,
 }: {
   items: {
-    title: string;
-    description: string;
+    title: React.ReactNode;      // ✅ changed
+    description: React.ReactNode; // ✅ changed
     link: string;
+    className?: string;
   }[];
   className?: string;
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
 
   return (
     <div
@@ -57,6 +56,7 @@ export const HoverEffect = ({
       ))}
     </div>
   );
+
 };
 
 export const Card = ({
