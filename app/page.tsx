@@ -6,6 +6,8 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import { FaWhatsapp, FaBars, FaTimes } from "react-icons/fa";
 import { useState, useEffect } from "react";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -90,68 +92,104 @@ export default function Home() {
     alert("Thank you! Your message has been sent.");
     setFormData({ name: "", email: "", message: "" });
   }; // ✅ properly closed
+const handleScroll = (id) => {
+  const section = document.querySelector(id);
+  if (section) {
+    const headerOffset = 80; // adjust based on your header height
+    const elementPosition = section.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth",
+    });
+
+    setMenuOpen(false); // closes mobile menu after clicking
+  }
+};
+const words = `We are ShootSide, a creative collective dedicated to transforming ideas into memorable visual experiences. Our passion lies in combining strategy, storytelling, and design to help brands connect meaningfully with their audiences. From concept to execution, we focus on innovation, creativity, and purpose in every project.`;
+
 
   return (
     <main className="relative min-h-screen bg-black text-white overflow-x-hidden">
         {/* Floating Glass Header */}
-        <header
-          className={`fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50 rounded-2xl px-6 py-3 flex items-center justify-between backdrop-blur-md border border-white/10 shadow-lg transition-all duration-300 ${
-            scrolled ? "bg-white/10" : "bg-white/5"
-          }`}
-        >
-          <h1 className="text-2xl font-bold tracking-wide">SHOOTSIDE</h1>
+       {/* Floating Glass Header */}
+<header
+  className={`fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50 rounded-2xl px-6 py-3 flex items-center justify-between backdrop-blur-md border border-white/10 shadow-lg transition-all duration-300 ${
+    scrolled ? "bg-white/10" : "bg-white/5"
+  }`}
+>
+  <h1 className="text-2xl font-bold tracking-wide">SHOOTSIDE</h1>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex gap-8 text-sm font-medium">
-            <a href="#features" className="hover:text-purple-400 transition">
-              Features
-            </a>
-            <a href="#about" className="hover:text-purple-400 transition">
-              About
-            </a>
-            <a href="#contact" className="hover:text-purple-400 transition">
-              Contact
-            </a>
-          </nav>
+  {/* Desktop nav */}
+  <nav className="hidden md:flex gap-8 text-sm font-medium">
+    <button
+      onClick={() => handleScroll("#services")}
+      className="hover:text-purple-400 transition"
+    >
+      Features
+    </button>
+    <button
+      onClick={() => handleScroll("#about")}
+      className="hover:text-purple-400 transition"
+    >
+      About
+    </button>
+    <button
+      onClick={() => handleScroll("#contact")}
+      className="hover:text-purple-400 transition"
+    >
+      Contact
+    </button>
+  </nav>
 
-          {/* Contact Us button for desktop */}
-          <a
-            href="tel:+917306166866"
-            className="hidden md:inline-block px-4 py-2 rounded-lg hover:bg-purple-600 transition text-sm font-semibold text-white"
-          >
-            Contact Us
-          </a>
+  {/* Contact Us button for desktop */}
+  <a
+    href="tel:+917306166866"
+    className="hidden md:inline-block px-4 py-2 rounded-lg hover:bg-purple-600 transition text-sm font-semibold text-white"
+  >
+    Contact Us
+  </a>
 
-          {/* Hamburger button for mobile */}
-          <button
-            className="md:hidden text-white text-xl"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? <FaTimes /> : <FaBars />}
-          </button>
+  {/* Hamburger button for mobile */}
+  <button
+    className="md:hidden text-white text-xl"
+    onClick={() => setMenuOpen(!menuOpen)}
+  >
+    {menuOpen ? <FaTimes /> : <FaBars />}
+  </button>
 
-          {/* Mobile menu */}
-          {menuOpen && (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[90%] bg-black/90 rounded-xl shadow-lg flex flex-col items-center py-4 gap-4 md:hidden">
-              <a href="#features" className="hover:text-purple-400 transition" onClick={() => setMenuOpen(false)}>
-                Features
-              </a>
-              <a href="#about" className="hover:text-purple-400 transition" onClick={() => setMenuOpen(false)}>
-                About
-              </a>
-              <a href="#contact" className="hover:text-purple-400 transition" onClick={() => setMenuOpen(false)}>
-                Contact
-              </a>
-              <a
-                href="#contact"
-                className="px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 transition text-white font-semibold w-full text-center"
-                onClick={() => setMenuOpen(false)}
-              >
-                Contact Us
-              </a>
-            </div>
-          )}
-        </header>
+  {/* Mobile menu */}
+  {menuOpen && (
+    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[90%] bg-black/90 rounded-xl shadow-lg flex flex-col items-center py-4 gap-4 md:hidden">
+      <button
+        onClick={() => handleScroll("#services")}
+        className="hover:text-purple-400 transition"
+      >
+        Features
+      </button>
+      <button
+        onClick={() => handleScroll("#about")}
+        className="hover:text-purple-400 transition"
+      >
+        About
+      </button>
+      <button
+        onClick={() => handleScroll("#contact")}
+        className="hover:text-purple-400 transition"
+      >
+        Contact
+      </button>
+      <button
+        onClick={() => handleScroll("#contact")}
+        className="px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 transition text-white font-semibold w-full text-center"
+      >
+        Contact Us
+      </button>
+    </div>
+  )}
+</header>
+
         
   <section id="hero" className="relative">
     <AuroraBackground className="h-[650px] md:h-[800px]">
@@ -173,7 +211,7 @@ export default function Home() {
         {/* Subheading / Rotating Words */}
         <div className="mt-4">
           <LayoutTextFlip
-            text="We are a"
+            text="We are a "
             words={["Media Agency", "Video Production", "Web Development", "Branding"]}
           />
         </div>
@@ -255,73 +293,165 @@ export default function Home() {
           </div>
         </section>
 
+
   {/*  */}
 
-  {/* WHO WE ARE SECTION */}
- 
- <div className="relative py-20 bg-black text-white overflow-hidden">
-  {/* Background - behind everything */}
-  {/* <BackgroundBeamsWithCollision className="absolute inset-0 w-full h-full -z-10" /> */}
-
-  {/* Content */}
-  <div className="relative max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-
-    {/* Left Side */}
-    <motion.div
-      initial={{ opacity: 0, x: -50 }}
-      whileInView={{ opacity: 1, x: 0 }}
+  {/* OUR WORKS SECTION */}
+<section
+  id="works"
+  className="py-20 bg-black text-white relative overflow-hidden"
+>
+  <div className="max-w-7xl mx-auto px-6 text-center">
+    {/* Title */}
+    <motion.h2
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
-      viewport={{ once: true }}
-      className="flex justify-center md:justify-start w-full"
+      className="text-4xl md:text-5xl font-extrabold mb-8"
     >
-      <div className="text-center md:text-left space-y-4">
-        <h2 className="text-purple-500 font-semibold text-lg sm:text-xl tracking-wide">
-          Who We Are
-        </h2>
-        <h1 className="text-white font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight break-words">
-          Crafting Experiences <br /> That Inspire
-        </h1>
-      </div>
-    </motion.div>
+      Our Recent Works
+    </motion.h2>
 
-    {/* Right Side */}
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.8, delay: 0.3 }}
-      viewport={{ once: true }}
-      className="w-full text-center md:text-left mt-10 md:mt-0 space-y-6"
-    >
-      <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-full md:max-w-lg">
-        We are <span className="text-purple-500 font-semibold">ShootSide</span>, a creative collective dedicated to transforming ideas into memorable visual experiences. Our passion lies in combining strategy, storytelling, and design to help brands connect meaningfully with their audiences.
-      </p>
+    <p className="text-gray-400 max-w-2xl mx-auto text-sm mb-12">
+      A glimpse into the creative journeys we’ve crafted — from brand stories
+      to digital experiences that inspire and engage.
+    </p>
 
-      <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-full md:max-w-lg">
-        From concept to execution, we focus on innovation, creativity, and purpose in every project. We believe in crafting content that doesn’t just look good—but makes an impact.
-      </p>
-    </motion.div>
-
+    {/* Grid of Works */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+      {[
+        { src: "/works/work1.png", title: "Toni & Guy Campaign" },
+        { src: "/works/work2.png", title: "Naturals Rebranding" },
+        { src: "/works/work3.png", title: "MYG Electronics Ad" },
+        { src: "/works/work4.png", title: "Slash Fitness Socials" },
+        { src: "/works/work5.png", title: "Evana Jewelry Film" },
+        { src: "/works/work6.png", title: "VFS Digital Campaign" },
+      ].map((work, idx) => (
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: idx * 0.1 }}
+          viewport={{ once: true }}
+          className="relative group overflow-hidden rounded-2xl border border-white/10 shadow-lg"
+        >
+          <Image
+            src={work.src}
+            alt={work.title}
+            width={600}
+            height={idx >= 3 ? 300 : 400} // reduce image height only for 4,5,6
+            className="w-full object-cover rounded-2xl transform group-hover:scale-110 transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-500 flex items-center justify-center">
+            {/* <h3 className="text-lg md:text-xl font-semibold">{work.title}</h3> */}
+          </div>
+        </motion.div>
+      ))}
+    </div>
   </div>
-</div>
-<section id="services" className="py-20 bg-gray-200 text-gray-900">
+</section>
+
+
+{/* WHO WE ARE SECTION */}
+  <section
+      id="about"
+      className="relative py-20 bg-black text-white overflow-hidden"
+    >
+      <div className="relative max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        {/* Left Side */}
+        <motion.div
+          initial={{ opacity: 0, x: -80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          viewport={{ once: true }}
+          className="flex justify-center md:justify-start w-full"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            viewport={{ once: true }}
+            className="text-center md:text-left space-y-4"
+          >
+            <h2 className="text-purple-500 font-semibold text-lg sm:text-xl tracking-wide">
+              Who We Are
+            </h2>
+            <h1 className="text-white font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight break-words">
+              Crafting Experiences <br /> That Inspire
+            </h1>
+          </motion.div>
+        </motion.div>
+
+        {/* Right Side with Animated Text */}
+        <motion.div
+          initial={{ opacity: 0, x: 80 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+          viewport={{ once: true }}
+          className="w-full text-center md:text-left mt-10 md:mt-0 space-y-6"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
+            viewport={{ once: true }}
+            className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-full md:max-w-lg"
+          >
+            <TextGenerateEffect words={words} />
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Background Glow */}
+      <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+    </section>
+
+<section
+  id="services"
+  className="py-20 text-gray-900 relative overflow-hidden"
+>
+  {/* Mesh Gradient Background */}
+  <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-500 via-fuchsia-500 to-indigo-600 opacity-90"></div>
+  <div className="absolute inset-0 -z-10 bg-[radial-gradient(at_30%_20%,rgba(255,255,255,0.3)_0%,transparent_60%)]"></div>
+  <div className="absolute inset-0 -z-10 bg-[radial-gradient(at_80%_70%,rgba(255,255,255,0.15)_0%,transparent_60%)]"></div>
+
   <div className="max-w-7xl mx-auto px-6 sm:px-12">
     {/* Title */}
     <div className="text-center mb-12">
-      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-purple-700">
+      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-purple-500 drop-shadow-lg">
         Our Services
       </h1>
-      <p className="mt-4 text-2xl  md:text-sm text-gray-600 max-w-2xl mx-auto">
+      <p className="mt-4 text-lg md:text-xl text-gray-100 max-w-2xl mx-auto">
         We provide a wide range of services designed to bring value, innovation, and growth to your business.
       </p>
     </div>
 
     {/* Cards */}
     <div className="max-w-6xl mx-auto">
-      <HoverEffect items={projects} />
+      <HoverEffect
+        items={projects.map((service) => ({
+          ...service,
+          title: (
+            <h2
+              className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text 
+                         bg-gradient-to-r from-purple-300 via-fuchsia-400 to-purple-500 mb-2 drop-shadow-[0_0_12px_rgba(168,85,247,0.6)]"
+            >
+              {service.title}
+            </h2>
+          ),
+          description: (
+            <p className="text-xs md:text-sm text-gray-300 leading-relaxed">
+              {service.description}
+            </p>
+          ),
+          className:
+            "bg-white/10 backdrop-blur-xl border border-purple-400/20 rounded-2xl p-6 shadow-lg shadow-purple-600/30 hover:shadow-purple-500/60 hover:-translate-y-2 transition-all duration-300",
+        }))}
+      />
     </div>
 
     {/* Footer note */}
-    <p className="mt-10 text-center text-base md:text-lg text-gray-500">
+    <p className="mt-10 text-center text-base md:text-lg text-gray-200">
       Click on a card to learn more about each service.
     </p>
   </div>
@@ -329,56 +459,54 @@ export default function Home() {
 
 
 
-
-
 {/* TESTIMONIALS SECTION */}
-<section className="bg-purple-900 text-white rounded 3xl  py-16 mt-3">
-  <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-    <h2 className="text-3xl md:text-4xl font-bold mb-12">What Our Clients Say</h2>
+  <section className="bg-purple-900 text-white rounded 3xl  py-16 mt-3">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 className="text-3xl md:text-4xl font-bold mb-12">What Our Clients Say</h2>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-      {/* Testimonial Card */}
-      <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex flex-col items-center text-center">
-        <p className="text-sm text-white/80 mb-4">
-          “ShootSide brought our vision to life in ways we never imagined.
-          Their creativity and professionalism are unmatched.”
-        </p>
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold mb-2">
-          A
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+        {/* Testimonial Card */}
+        <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex flex-col items-center text-center">
+          <p className="text-sm text-white/80 mb-4">
+            “ShootSide brought our vision to life in ways we never imagined.
+            Their creativity and professionalism are unmatched.”
+          </p>
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold mb-2">
+            A
+          </div>
+          <h4 className="text-sm font-semibold">Arjun R</h4>
+          <span className="text-xs text-white/60">Startup Founder</span>
         </div>
-        <h4 className="text-sm font-semibold">Arjun R</h4>
-        <span className="text-xs text-white/60">Startup Founder</span>
-      </div>
 
-      <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex flex-col items-center text-center">
-        <p className="text-sm text-white/80 mb-4">
-          “Their team is highly skilled, communicative, and easy to work with.
-          We loved every step of the journey.”
-        </p>
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold mb-2">
-          S
+        <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex flex-col items-center text-center">
+          <p className="text-sm text-white/80 mb-4">
+            “Their team is highly skilled, communicative, and easy to work with.
+            We loved every step of the journey.”
+          </p>
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold mb-2">
+            S
+          </div>
+          <h4 className="text-sm font-semibold">Sneha M</h4>
+          <span className="text-xs text-white/60">Creative Director</span>
         </div>
-        <h4 className="text-sm font-semibold">Sneha M</h4>
-        <span className="text-xs text-white/60">Creative Director</span>
-      </div>
 
-      <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex flex-col items-center text-center">
-        <p className="text-sm text-white/80 mb-4">
-          “They don’t just deliver content, they craft experiences. Truly the
-          best partner for our brand storytelling.”
-        </p>
-        <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold mb-2">
-          R
+        <div className="bg-white/10 border border-white/20 rounded-2xl p-6 flex flex-col items-center text-center">
+          <p className="text-sm text-white/80 mb-4">
+            “They don’t just deliver content, they craft experiences. Truly the
+            best partner for our brand storytelling.”
+          </p>
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold mb-2">
+            R
+          </div>
+          <h4 className="text-sm font-semibold">Rahul P</h4>
+          <span className="text-xs text-white/60">Marketing Head</span>
         </div>
-        <h4 className="text-sm font-semibold">Rahul P</h4>
-        <span className="text-xs text-white/60">Marketing Head</span>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
   
-  <section className="relative bg-black py-24 px-6">
+  <section className="relative bg-black py-24 px-6" id="contact">
     {/* Heading */}
     <div className="max-w-5xl mx-auto text-center mb-16">
       <h2 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-700 mb-4 animate-gradient-x">
@@ -490,7 +618,7 @@ export default function Home() {
               embark on this journey with you. Are you?
             </p>
             <div className="flex flex-wrap gap-4 text-xs justify-end">
-              <a href="#" className="hover:text-purple-200">[ INSTAGRAM ]</a>
+              <a href="https://www.instagram.com/shootside.in/?hl=en" className="hover:text-purple-200">[ INSTAGRAM ]</a>
               <a href="#" className="hover:text-purple-200">[ FACEBOOK ]</a>
               <a href="#" className="hover:text-purple-200">[ LINKEDIN ]</a>
               <a href="#" className="hover:text-purple-200">[ BEHANCE ]</a>

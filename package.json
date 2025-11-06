@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-"build": "next build --turbopack --no-lint --skip-type-check",
+    "build": "next build --turbopack --no-lint --skip-type-check",
     "start": "next start",
     "lint": "eslint",
     "export": "next build && next export"
   },
   "dependencies": {
+    "@next/font": "^14.2.15",
     "@supabase/supabase-js": "^2.58.0",
     "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/cli": "^4.1.13",
