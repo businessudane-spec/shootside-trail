@@ -60,6 +60,22 @@ export default function Contact() {
           >
             💬 Chat on WhatsApp
           </a>
+          <a
+  href="/shootside.vcf"
+  download="Shootside.vcf"
+  className="fixed bottom-6 right-6 bg-white text-black w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:shadow-xl hover:scale-105 transition"
+  title="Add to Contacts"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="w-7 h-7"
+  >
+    <path d="M15 14c2.67 0 8 1.34 8 4v2h-8v-2c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v2H0v-2c0-2.66 5.33-4 8-4h7zm-3-2c2.21 0 4-1.79 4-4S14.21 4 12 4 8 5.79 8 8s1.79 4 4 4zm7-5h-2V5h-2V3h2V1h2v2h2v2h-2v2z"/>
+  </svg>
+</a>
+
 
         </div>
       </div>
