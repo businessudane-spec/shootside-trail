@@ -1,65 +1,367 @@
-import Image from "next/image";
+"use client";
 
+import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "motion/react";
+
+import SplineScene from "@/components/SplineScene";
+import QuoteSection from "@/components/QuoteSection";
+import XLabHero from "@/components/XLabHero";
+import Orb from "@/components/ui/orb";
+import HeroSection from "@/components/HeroSection";
 export default function Home() {
+  const titles = [
+  [""],
+  [""],
+  [""],
+  [""],
+  [""] 
+];
+
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % titles.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+const statsRef = useRef(null);
+const [startCount, setStartCount] = useState(false);
+const [works, setWorks] = useState(0);
+const [clients, setClients] = useState(0);
+
+useEffect(() => {
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) {
+        setStartCount(true);
+      }
+    },
+    { threshold: 0.4 }
+  );
+
+  if (statsRef.current) {
+    observer.observe(statsRef.current);
+  }
+
+  return () => observer.disconnect();
+}, []);
+
+useEffect(() => {
+  if (!startCount) return;
+
+  let workInterval = setInterval(() => {
+    setWorks((prev) => {
+      if (prev >= 100) {
+        clearInterval(workInterval);
+        return 100;
+      }
+      return prev + 2;
+    });
+  }, 30);
+
+  let clientInterval = setInterval(() => {
+    setClients((prev) => {
+      if (prev >= 10) {
+        clearInterval(clientInterval);
+        return 10;
+      }
+      return prev + 1;
+    });
+  }, 150);
+
+  return () => {
+    clearInterval(workInterval);
+    clearInterval(clientInterval);
+  };
+}, [startCount]);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <main className="bg-black text-white">
+
+      {/* HERO SECTION */}
+{/* HERO SECTION */}
+
+<HeroSection />
+      {/* TRUSTED BRANDS */}
+
+      <section className="bg-[#121212] py-8  overflow-hidden">
+
+  <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-[100px] flex flex-col md:flex-row items-center justify-between gap-6 gap-10">
+
+    {/* LEFT TEXT */}
+    <div className="text-gray-300 text-sm md:text-base font-medium w-[220px]">
+      Trusted brands that <br /> We have helped
     </div>
+
+    {/* RIGHT LOGO SLIDER */}
+    <div className="flex-1 overflow-hidden">
+
+      <div className="flex items-center gap-16 animate-brand-slide w-max">
+
+        <img src="/brands/adidas.png" className="h-[15px] opacity-90" />
+
+        <img
+          src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png"
+          className="h-[15px] opacity-90"
+        />
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+        <img
+          src="https://www.myg.in/images/logos/1/site-Logo.png"
+          className="h-[15px] opacity-90"
+        />
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+        {/* duplicate for smooth infinite */}
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+        <img
+          src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png"
+          className="h-[15px] opacity-90"
+        />
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+        <img
+          src="https://www.myg.in/images/logos/1/site-Logo.png"
+          className="h-[15px] opacity-90"
+        />
+
+        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+{/* SERVICES TITLE */}
+<section className="bg-[#000000] pt-32 pb-20 text-center">
+
+  <div className="max-w-5xl mx-auto px-6">
+
+    {/* Title */}
+    <h2 className="font-black text-4xl md:text-6xl xl:text-8xl uppercase text-white mb-8">
+      OUR SERVICES
+    </h2>
+
+    {/* Description */}
+    <p className="text-gray-400 text-lg leading-relaxed max-w-5xl mx-auto">
+      We provide businesses with an expert team that guides them through
+      establishing online marketing strategy. Our areas of expertise include
+      <span className="text-white font-semibold">
+        {" "}Digital marketing services in Calicut
+      </span>, branding, production, website development,
+      package design, and printing design.
+    </p>
+
+  </div>
+
+</section>
+
+{/* SPLINE SECTION */}
+
+<SplineScene />   
+{/* IMAGE GRID */}
+
+<section className="bg-black py-24">
+  <div className="max-w-7xl mx-auto px-6">
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 gap-4">
+
+       <div className="h-[520px] bg-black overflow-hidden rounded-2xl border-2 border-gray-300 flex items-center justify-center">
+  <img
+    src="/zenato.png"
+    alt="zenato Logo"
+    className="h-[40%] w-auto object-contain"
+  />
+</div>
+
+      <div className="h-[520px] overflow-hidden rounded-2xl border-2 border-gray-300">
+  <video
+  className="w-full h-full object-cover"
+  autoPlay
+  muted
+  loop
+  playsInline
+>
+  <source src="/amg.mp4" type="video/mp4" />
+</video>
+</div>
+
+       <div className="h-[520px] bg-black overflow-hidden rounded-2xl border-2 border-gray-300 flex items-center justify-center">
+  <img
+    src="/crizpo.png"
+    alt="crizpo Logo"
+    className="h-[30%] w-auto object-contain"
+  />
+</div>
+
+    </div>
+
+  </div>
+ <div className="max-w-7xl mx-auto px-6 py-[80px]">
+
+<div
+  ref={statsRef}
+  className="flex flex-col md:flex-row md:items-center gap-10"
+>
+
+  {/* Title */}
+  <h3 className="text-5xl md:text-[83px] font-black uppercase leading-none tracking-tight text-white">
+    OUR STATS
+  </h3>
+
+  {/* Stats */}
+  <div className="flex flex-col sm:flex-row gap-10 md:gap-20 md:ml-auto">
+
+    {/* Stat 1 */}
+    <div className="flex flex-col items-center md:items-start">
+      <span className="text-4xl md:text-6xl font-black text-[#ad46ff]">
+        {works}+
+      </span>
+      <span className="text-gray-400 uppercase tracking-wider text-xs md:text-sm mt-2">
+        Works Completed
+      </span>
+    </div>
+
+    {/* Stat 2 */}
+    <div className="flex flex-col items-center md:items-start">
+      <span className="text-4xl md:text-6xl font-black text-[#ad46ff]">
+        {clients}+
+      </span>
+      <span className="text-gray-400 uppercase tracking-wider text-xs md:text-sm mt-2">
+        Happy Clients
+      </span>
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+  <div className="max-w-7xl mx-auto px-6">
+
+    <div className="grid md:grid-cols-3 gap-4">
+
+      <div className="h-[520px] overflow-hidden rounded-2xl border-2 border-gray-300">
+        <video
+  className="w-full h-full object-cover"
+  autoPlay
+  muted
+  loop
+  playsInline
+>
+  <source src="/hyundai.mp4" type="video/mp4" />
+</video>
+      </div>
+<div className="h-[520px] bg-black overflow-hidden rounded-2xl border-2 border-gray-300 flex items-center justify-center">
+  <img
+    src="/Wattle-White-Text-Logo.svg"
+    alt="Wattlecorp Logo"
+    className="h-[30%] w-auto object-contain"
+  />
+</div>
+
+      <div className="h-[520px] overflow-hidden rounded-2xl border-2 border-gray-300">
+        <video
+  className="w-full h-full object-cover"
+  autoPlay
+  muted
+  loop
+  playsInline
+>
+  <source src="/myg.mp4" type="video/mp4" />
+</video>
+      </div>
+
+    </div>
+
+  </div>  
+</section>
+{/* OUR STATS */}
+<section className="w-full bg-black py-[10px]">
+<div className="w-full h-[260px] md:h-[400px] relative overflow-hidden border-y border-black">   <video
+  className="w-full h-full object-cover"
+  autoPlay
+  muted
+  loop
+  playsInline
+>
+  <source src="/IMG_1418.mp4" type="video/mp4" />
+</video>
+  </div>
+</section>
+
+
+
+
+<QuoteSection />
+<section className="w-full bg-black py-10 overflow-hidden">
+
+  <div className="marquee-wrapper space-y-6">
+
+    {/* FIRST LINE */}
+    <div className="marquee-track text-[80px] sm:text-[120px] md:text-[160px] lg:text-[180px] font-black uppercase leading-none whitespace-nowrap">
+
+      <span className="mx-0 text-white">Discovery</span>
+      <span className="mx-0 text-[#ad46ff]">Outreach</span>
+      <span className="mx-0 text-white">Negotiation</span>
+      <span className="mx-0 text-[#ad46ff]">Creation</span>
+      <span className="mx-0 text-white">Management</span>
+      <span className="mx-0 text-[#ad46ff]">Collaboration</span>
+
+      {/* duplicate */}
+      <span className="mx-0 text-white">Discovery</span>
+      <span className="mx-0 text-[#ad46ff]">Outreach</span>
+      <span className="mx-0 text-white">Negotiation</span>
+      <span className="mx-0 text-[#ad46ff]">Creation</span>
+      <span className="mx-0 text-white">Management</span>
+      <span className="mx-0 text-[#ad46ff]">Collaboration</span>
+
+    </div>
+
+
+    {/* SECOND LINE (REVERSE) */}
+    <div className="marquee-track-reverse text-[180px] font-black uppercase leading-none whitespace-nowrap">
+
+      <span className="mx-0 text-[#ad46ff]">Strategy</span>
+      <span className="mx-0 text-white">Branding</span>
+      <span className="mx-0 text-[#ad46ff]">Production</span>
+      <span className="mx-0 text-white">Marketing</span>
+      <span className="mx-0 text-[#ad46ff]">Design</span>
+      <span className="mx-0 text-white">Innovation</span>
+
+      {/* duplicate */}
+      <span className="mx-0 text-[#ad46ff]">Strategy</span>
+      <span className="mx-0 text-white">Branding</span>
+      <span className="mx-0 text-[#ad46ff]">Production</span>
+      <span className="mx-0 text-white">Marketing</span>
+      <span className="mx-0 text-[#ad46ff]">Design</span>
+      <span className="mx-0 text-white">Innovation</span>
+
+    </div>
+
+  </div>
+
+</section>
+
+<section>
+  <XLabHero />
+</section>
+{/* EXPERIENCE SECTION */}
+
+
+    </main>
   );
 }
