@@ -8,13 +8,8 @@ export default function Footer() {
       className="relative overflow-hidden text-white w-full"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
-      {/* Google Font + Animations */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
-
-        // .animated-bg {
-        //   background: radial-gradient(circle at 20% 30%, #a855f7 0%, #7B00FF 40%, #5f00cc 100%);
-        // }
 
         .blob {
           position: absolute;
@@ -60,9 +55,6 @@ export default function Footer() {
         }
       `}</style>
 
-      {/* Background */}
-      <div className="animated-bg absolute inset-0 -z-20"></div>
-
       {/* Floating Blobs */}
       <div
         className="blob"
@@ -96,11 +88,11 @@ export default function Footer() {
         }}
       />
 
-      {/* CONTENT */}
-      <div className="relative z-10">
+      {/* CONTENT CONTAINER */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
 
         {/* Brand */}
-        <div className="pt-16 px-[clamp(30px,6vw,90px)]">
+        <div className="pt-16">
           <h1
             style={{
               fontWeight: 900,
@@ -119,8 +111,6 @@ export default function Footer() {
           className="py-14 grid gap-12"
           style={{
             gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            paddingLeft: "clamp(30px, 6vw, 90px)",
-            paddingRight: "clamp(30px, 6vw, 90px)",
           }}
         >
           {/* Pages */}
@@ -136,7 +126,7 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* Services */}
+          {/* Works */}
           <div>
             <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 22 }}>
               Our Works
@@ -178,7 +168,6 @@ export default function Footer() {
           style={{ borderTop: "1px solid rgba(255,255,255,0.25)" }}
         >
           <div className="flex gap-8">
-
             <a
               href="https://www.instagram.com/shootside.in/"
               target="_blank"
@@ -209,7 +198,6 @@ export default function Footer() {
             >
               <MessageCircle size={22} />
             </a>
-
           </div>
 
           <p style={{ fontSize: 14, opacity: 0.95 }}>

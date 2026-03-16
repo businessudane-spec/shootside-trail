@@ -311,3 +311,36 @@
   animation: marquee 15s linear infinite;
 }
 
+/* about us */
+
+@keyframes scrollUp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes scrollDown {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
+
+/* EXISTING */
+.animate-scrollUp {
+  animation: scrollUp 18s linear infinite;
+}
+
+.animate-scrollDown {
+  animation: scrollDown 18s linear infinite;
+}
+
+/* NEW LAYERS */
+.animate-scrollSlow {
+  animation: scrollUp 90s linear infinite;
+}
+
+.animate-scrollMedium {
+  animation: scrollDown 85s linear infinite;
+}
+
+.animate-scrollFast {
+  animation: scrollUp 70s linear infinite;
+}

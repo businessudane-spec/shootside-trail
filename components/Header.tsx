@@ -2,112 +2,103 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
-  const [scrolled, setScrolled] = useState(false);
+
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 60);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const menuItems = [
+    { name: "Home", link: "/" },
+    { name: "About", link: "/about" },
+  ];
 
   return (
-    <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        scrolled
-          ? "backdrop-blur-xl bg-black/50 shadow-[0_10px_40px_rgba(0,0,0,0.4)]"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <>
+      <header className="fixed top-0 left-0 w-full z-50 bg-transparent">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-        {/* LOGO */}
-       <Link href="/" className="flex items-center">
-  <Image
-    src="/shootside-logos.png"
-    alt="Shootside Logo"
-   width={220}
-    height={80}
-    className="h-14 w-auto"
-    priority
-  />
-</Link>
-
-        {/* DESKTOP MENU */}
-        <nav className="hidden md:flex items-center gap-10 text-sm text-gray-300">
-          <Link
-            href="/"
-            className="hover:text-white transition"
-          >
-            Home
+          {/* LOGO */}
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/shootside-logos.png"
+              alt="Shootside Logo"
+              width={220}
+              height={80}
+              className="h-14 w-auto"
+              priority
+            />
           </Link>
 
-          {/* <Link
-            href="/about"
-            className="hover:text-white transition"
-          >
-            About
-          </Link>
-
-          <Link
-            href="/portfolio"
-            className="hover:text-white transition"
-          >
-            Work
-          </Link>
-
-          <Link
-            href="/services"
-            className="hover:text-white transition"
-          >
-            Services
-          </Link> */}
-        </nav>
-
-        {/* RIGHT SIDE */}
-        <div className="flex items-center gap-6">
-
-          {/* CONTACT BUTTON */}
-         <a
-  href="https://wa.me/917306166866"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="hidden md:inline-block px-5 py-2 rounded-full bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition"
->
-  Contact
-</a>
-
-          {/* MOBILE MENU BUTTON */}
+          {/* HAMBURGER */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden flex flex-col gap-[6px]"
+            className="flex flex-col gap-[6px] z-50"
           >
             <span
-              className={`block h-[2px] w-6 bg-white transition-all ${
+              className={`block h-[2px] w-7 bg-white transition-all duration-300 ${
                 menuOpen ? "rotate-45 translate-y-[8px]" : ""
               }`}
             />
             <span
-              className={`block h-[2px] w-6 bg-white transition-all ${
+              className={`block h-[2px] w-7 bg-white transition-all duration-300 ${
                 menuOpen ? "opacity-0" : ""
               }`}
             />
             <span
-              className={`block h-[2px] w-6 bg-white transition-all ${
+              className={`block h-[2px] w-7 bg-white transition-all duration-300 ${
                 menuOpen ? "-rotate-45 -translate-y-[8px]" : ""
               }`}
             />
           </button>
 
         </div>
+      </header>
 
-      </div>
-    </header>
+      {/* FULLSCREEN MENU */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-40 flex items-center justify-center"
+          >
+            <nav className="flex flex-col items-center gap-10">
+
+              {menuItems.map((item, i) => (
+                <motion.div
+                  key={item.name}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.15 }}
+                >
+                  <Link
+                    href={item.link}
+                    onClick={() => setMenuOpen(false)}
+                    className="text-4xl font-semibold text-white hover:text-purple-500 transition"
+                  >
+                    {item.name}
+                  </Link>
+                </motion.div>
+              ))}
+
+              <motion.a
+                href="https://wa.me/917306166866"
+                target="_blank"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-10 px-6 py-3 rounded-full bg-purple-600 text-white text-sm hover:bg-purple-700"
+              >
+                Contact
+              </motion.a>
+
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
