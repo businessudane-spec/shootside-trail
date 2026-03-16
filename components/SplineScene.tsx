@@ -1,9 +1,11 @@
-// components/SplineScene.tsx
 "use client";
 
 import Script from "next/script";
+import { useState } from "react";
 
 export default function SplineScene() {
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <section className="relative w-full h-[800px] bg-[#0f0f0f] overflow-hidden">
 
@@ -12,16 +14,19 @@ export default function SplineScene() {
         type="module"
         src="https://unpkg.com/@splinetool/viewer@1.12.67/build/spline-viewer.js"
         strategy="afterInteractive"
+        onLoad={() => setLoaded(true)}
       />
 
       {/* Spline background */}
-    <div className="absolute inset-0 flex items-center justify-center">
-  {/* @ts-ignore: custom element from spline */}
-  <spline-viewer
-    url="https://prod.spline.design/gOLQUW9hesA801rg/scene.splinecode"
-    style={{ width: "100%", height: "100%" }}
-  />
-</div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        {loaded && (
+          // @ts-ignore
+          <spline-viewer
+            url="https://prod.spline.design/gOLQUW9hesA801rg/scene.splinecode"
+            style={{ width: "100%", height: "100%" }}
+          />
+        )}
+      </div>
 
       {/* Overlay content */}
       <div className="relative z-10 max-w-7xl mx-auto h-full px-6 flex items-start pt-24 pointer-events-auto">
