@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Header() {
@@ -27,12 +28,16 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         {/* LOGO */}
-        <Link
-          href="/"
-          className="text-2xl font-bold tracking-wide text-purple-500"
-        >
-          SHOOTSIDE
-        </Link>
+       <Link href="/" className="flex items-center">
+  <Image
+    src="/shootside-logos.png"
+    alt="Shootside Logo"
+   width={220}
+    height={80}
+    className="h-14 w-auto"
+    priority
+  />
+</Link>
 
         {/* DESKTOP MENU */}
         <nav className="hidden md:flex items-center gap-10 text-sm text-gray-300">

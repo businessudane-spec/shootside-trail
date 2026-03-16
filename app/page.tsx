@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from "motion/react";
 import SplineScene from "@/components/SplineScene";
 import QuoteSection from "@/components/QuoteSection";
 import XLabHero from "@/components/XLabHero";
-import Orb from "@/components/ui/orb";
-import HeroSection from "@/components/HeroSection";
+import Orb from   "@/components/ui/orb";
+
 export default function Home() {
   const titles = [
   [""],
@@ -82,8 +82,16 @@ useEffect(() => {
 
       {/* HERO SECTION */}
 {/* HERO SECTION */}
+<div style={{ width: '100%', height: '600px', position: 'relative' }}>
+  <Orb
+    hoverIntensity={2}
+    rotateOnHover
+    hue={0}
+    forceHoverState={false}
+    backgroundColor="#000000"
+/>
+</div>
 
-<HeroSection />
       {/* TRUSTED BRANDS */}
 
       <section className="bg-[#121212] py-8  overflow-hidden">
@@ -98,49 +106,25 @@ useEffect(() => {
     {/* RIGHT LOGO SLIDER */}
     <div className="flex-1 overflow-hidden">
 
-      <div className="flex items-center gap-16 animate-brand-slide w-max">
+  <div className="flex items-center gap-16 animate-brand-slide w-max">
 
-        <img src="/brands/adidas.png" className="h-[15px] opacity-90" />
+    {/* logos */}
+    <img src="/Wattle-White-Text-Logo.svg" className="h-[30px] opacity-90" />
+    <img src="/CRIZPO.png" className="h-[30px] opacity-90" />
+    <img src="/zenato.png" className="h-[35px] opacity-90" />
+    <img src="https://www.myg.in/images/logos/1/site-Logo.png" className="h-[15px] opacity-90" />
+    <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
 
-        <img
-          src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png"
-          className="h-[15px] opacity-90"
-        />
+    {/* duplicate once */}
+    <img src="/Wattle-White-Text-Logo.svg" className="h-[30px] opacity-90" />
+    <img src="/CRIZPO.png" className="h-[30px] opacity-90" />
+    <img src="/zenato.png" className="h-[35px] opacity-90" />
+    <img src="https://www.myg.in/images/logos/1/site-Logo.png" className="h-[15px] opacity-90" />
+    <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
 
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+  </div>
 
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
-        <img
-          src="https://www.myg.in/images/logos/1/site-Logo.png"
-          className="h-[15px] opacity-90"
-        />
-
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
-        {/* duplicate for smooth infinite */}
-
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
-        <img
-          src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png"
-          className="h-[15px] opacity-90"
-        />
-
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
-        <img
-          src="https://www.myg.in/images/logos/1/site-Logo.png"
-          className="h-[15px] opacity-90"
-        />
-
-        <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
-      </div>
-
-    </div>
+</div>
 
   </div>
 
@@ -306,13 +290,12 @@ useEffect(() => {
 
 
 
-<QuoteSection />
-<section className="w-full bg-black py-10 overflow-hidden">
+<QuoteSection /><section className="w-full bg-black py-10 overflow-hidden">
 
   <div className="marquee-wrapper space-y-6">
 
     {/* FIRST LINE */}
-    <div className="marquee-track text-[80px] sm:text-[120px] md:text-[160px] lg:text-[180px] font-black uppercase leading-none whitespace-nowrap">
+    <div className="marquee-track text-[36px] sm:text-[70px] md:text-[120px] lg:text-[160px] font-black uppercase leading-none whitespace-nowrap">
 
       <span className="mx-0 text-white">Discovery</span>
       <span className="mx-0 text-[#ad46ff]">Outreach</span>
@@ -332,8 +315,8 @@ useEffect(() => {
     </div>
 
 
-    {/* SECOND LINE (REVERSE) */}
-    <div className="marquee-track-reverse text-[180px] font-black uppercase leading-none whitespace-nowrap">
+    {/* SECOND LINE */}
+    <div className="marquee-track-reverse text-[36px] sm:text-[70px] md:text-[120px] lg:text-[160px] font-black uppercase leading-none whitespace-nowrap">
 
       <span className="mx-0 text-[#ad46ff]">Strategy</span>
       <span className="mx-0 text-white">Branding</span>

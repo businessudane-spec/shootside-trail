@@ -297,8 +297,41 @@ export default function Orb({
     };
   }, [hue, hoverIntensity, rotateOnHover, forceHoverState, backgroundColor]);
 
-  return <div ref={ctnDom} className="orb-container" />;
-}
+return (
+  <div ref={ctnDom} className="orb-container relative w-full h-[700px] flex items-center justify-center">
+
+    {/* TEXT CONTENT */}
+    <div className="absolute z-10 text-center max-w-3xl px-6">
+
+      <div className="inline-block mb-6 px-5 py-2 rounded-full border border-white/20 text-white/80 text-sm backdrop-blur">
+        SHOOTSIDE
+      </div>
+
+      <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
+        Creative Digital Studio
+      </h1>
+
+      <p className="text-gray-400 mt-6 text-lg">
+        We build modern digital experiences combining design, technology and storytelling.
+      </p>
+
+      {/* BUTTONS */}
+      <div className="flex justify-center gap-4 mt-8">
+
+        <button className="bg-white text-black px-8 py-3 rounded-full font-medium hover:scale-105 transition">
+          Get Started
+        </button>
+
+        <button className="border border-white/20 text-white px-8 py-3 rounded-full backdrop-blur hover:bg-white/10 transition">
+          Contact
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+);}
 
 function hslToRgb(h: number, s: number, l: number) {
   let r, g, b;

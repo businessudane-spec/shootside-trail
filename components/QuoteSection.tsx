@@ -55,14 +55,18 @@ export default function QuoteSection() {
   const item = testimonials[index];
 
   return (
-    <section className="w-full bg-black py-[10px]">
-<div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-5 gap-16 items-center">
+    <section className="w-full bg-black py-16">
+
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-5 gap-12 items-center">
+
         {/* LEFT QUOTE */}
-<div key={index} className="md:col-span-3 quote-animate max-w-3xl">
- <blockquote
-  className="font-light text-white leading-tight md:leading-snug break-words whitespace-normal"
-  style={{ fontSize: "clamp(1.3rem, 3.5vw, 2.8rem)" }}
->           “{item.quote}”
+        <div key={index} className="md:col-span-3 quote-animate max-w-3xl">
+
+          <blockquote
+            className="font-light text-white leading-tight md:leading-snug break-words"
+            style={{ fontSize: "clamp(1.3rem, 3.5vw, 2.8rem)" }}
+          >
+            “{item.quote}”
           </blockquote>
 
           <div className="mt-10">
@@ -71,20 +75,24 @@ export default function QuoteSection() {
               {item.role}
             </p>
           </div>
+
         </div>
 
         {/* RIGHT IMAGE */}
-        <div key={item.image} className="md:col-span-2 quote-animate">
+        <div key={item.image} className="md:col-span-2 quote-animate flex justify-center">
+
           <Image
             src={item.image}
             alt={item.name}
             width={600}
             height={600}
-            className="w-full h-[500px] object-cover rounded-2xl"
+            className="w-full max-w-[420px] md:max-w-none h-auto md:h-[500px] object-contain rounded-2xl"
           />
+
         </div>
 
       </div>
+
     </section>
   );
 }
