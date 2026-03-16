@@ -16,11 +16,12 @@ export default function SplineScene() {
 
       {/* Spline background */}
       <div className="absolute inset-0 flex items-center justify-center">
-     {/* @ts-ignore */}
-<spline-viewer
-  url="https://prod.spline.design/gOLQUW9hesA801rg/scene.splinecode"
-  style={{ width: "100%", height: "100%" }}
-></spline-viewer>
+     <div
+  className="w-full h-full"
+  dangerouslySetInnerHTML={{
+    __html: `<spline-viewer url="https://prod.spline.design/gOLQUW9hesA801rg/scene.splinecode" style="width:100%;height:100%;"></spline-viewer>`
+  }}
+/>
       </div>
 
       {/* Overlay content */}
