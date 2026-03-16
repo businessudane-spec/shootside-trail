@@ -164,7 +164,6 @@ key={i}
 src={img.src}
 className="absolute w-36 h-36 rounded-xl object-cover"
 style={{
-opacity:spreadOpacity,
 rotateY:flip,
 x:useTransform(spread,v=>v*img.dx),
 y:useTransform(spread,v=>v*img.dy),
