@@ -118,6 +118,7 @@ useEffect(() => {
     <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
     <img src="/alf-removebg-preview.png" className="h-[35px] opacity-90" />
     <img src="/creamount-removebg-preview.png" className="h-[35px] opacity-90" />
+    <img src="/qn.png" className="h-[35px] opacity-90" />
 
     {/* duplicate once */}
     <img src="/Wattle-White-Text-Logo.svg" className="h-[30px] opacity-90" />
