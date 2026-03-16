@@ -29,8 +29,7 @@ export default function SplineScene() {
       </div>
 
       {/* Overlay content */}
-      <div className="relative z-10 max-w-7xl mx-auto h-full px-6 flex items-start pt-24 pointer-events-auto">
-
+<div className="relative z-10 max-w-[1200px] mx-auto px-8 md:px-16 xl:px-24 h-full flex items-start pt-24 pointer-events-auto">
         {/* Desktop = grid | Mobile = stacked */}
         <div className="flex flex-col md:grid md:grid-cols-3 w-full items-center gap-16">
 
@@ -87,7 +86,7 @@ export default function SplineScene() {
 
             <div className="max-w-[420px] group cursor-pointer transition-all duration-300 hover:-translate-y-1">
               <h3 className="text-3xl md:text-5xl xl:text-6xl font-black uppercase leading-none tracking-tight transition-colors duration-300 group-hover:text-[#ad46ff]">
-                AUTOMATION
+                WORKFLOW
               </h3>
               <p className="text-sm text-gray-400 mt-3 transition-colors duration-300 group-hover:text-gray-200">
                 Smart automation systems that streamline marketing, content publishing,

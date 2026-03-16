@@ -9,6 +9,8 @@ import QuoteSection from "@/components/QuoteSection";
 import XLabHero from "@/components/XLabHero";
 import Orb from   "@/components/ui/orb";
 
+
+
 export default function Home() {
   const titles = [
   [""],
@@ -114,6 +116,8 @@ useEffect(() => {
     <img src="/zenato.png" className="h-[35px] opacity-90" />
     <img src="https://www.myg.in/images/logos/1/site-Logo.png" className="h-[15px] opacity-90" />
     <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
+    <img src="/alf-removebg-preview.png" className="h-[35px] opacity-90" />
+    <img src="/creamount-removebg-preview.png" className="h-[35px] opacity-90" />
 
     {/* duplicate once */}
     <img src="/Wattle-White-Text-Logo.svg" className="h-[30px] opacity-90" />
@@ -121,7 +125,8 @@ useEffect(() => {
     <img src="/zenato.png" className="h-[35px] opacity-90" />
     <img src="https://www.myg.in/images/logos/1/site-Logo.png" className="h-[15px] opacity-90" />
     <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
-
+<img src="/alf-removebg-preview.png" className="h-[35px] opacity-90" />
+    <img src="/creamount-removebg-preview.png" className="h-[35px] opacity-90" />
   </div>
 
 </div>
@@ -130,37 +135,13 @@ useEffect(() => {
 
 </section>
 {/* SERVICES TITLE */}
-<section className="bg-[#000000] pt-32 pb-20 text-center">
-
-  <div className="max-w-5xl mx-auto px-6">
-
-    {/* Title */}
-    <h2 className="font-black text-4xl md:text-6xl xl:text-8xl uppercase text-white mb-8">
-      OUR SERVICES
-    </h2>
-
-    {/* Description */}
-    <p className="text-gray-400 text-lg leading-relaxed max-w-5xl mx-auto">
-      We provide businesses with an expert team that guides them through
-      establishing online marketing strategy. Our areas of expertise include
-      <span className="text-white font-semibold">
-        {" "}Digital marketing services in Calicut
-      </span>, branding, production, website development,
-      package design, and printing design.
-    </p>
-
-  </div>
-
-</section>
-
 {/* SPLINE SECTION */}
 
 <SplineScene />   
 {/* IMAGE GRID */}
 
 <section className="bg-black py-24">
-  <div className="max-w-7xl mx-auto px-6">
-
+<div className="max-w-[1200px] mx-auto px-8 md:px-16 xl:px-24">
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 gap-4">
 
        <div className="h-[520px] bg-black overflow-hidden rounded-2xl border-2 border-gray-300 flex items-center justify-center">
@@ -194,9 +175,8 @@ useEffect(() => {
     </div>
 
   </div>
- <div className="max-w-7xl mx-auto px-6 py-[80px]">
-
-<div
+<div className="max-w-[1200px] mx-auto px-8 md:px-16 xl:px-24 py-[80px]">
+  <div
   ref={statsRef}
   className="flex flex-col md:flex-row md:items-center gap-10"
 >
@@ -234,8 +214,7 @@ useEffect(() => {
 </div>
 
 </div>
-  <div className="max-w-7xl mx-auto px-6">
-
+<div className="max-w-[1200px] mx-auto px-8 md:px-16 xl:px-24">
     <div className="grid md:grid-cols-3 gap-4">
 
       <div className="h-[520px] overflow-hidden rounded-2xl border-2 border-gray-300">
