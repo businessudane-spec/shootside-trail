@@ -9,10 +9,11 @@ export default function Header() {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const menuItems = [
-    { name: "Home", link: "/" },
-    { name: "About", link: "/about" },
-  ];
+const menuItems = [
+  { name: "Home", link: "/" },
+  { name: "About", link: "/about" },
+  { name: "Works", link: "/#works" }, // 👈 ADD THIS
+];
 
   return (
     <>
