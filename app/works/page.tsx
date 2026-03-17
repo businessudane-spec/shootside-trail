@@ -1,290 +1,233 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
-/* ---------- COLOR HELPER ---------- */
-
-const darkenColor = (hex: string, percent: number) => {
-  let color = hex.replace("#", "");
-  const num = parseInt(color, 16);
-
-  let r = (num >> 16) & 255;
-  let g = (num >> 8) & 255;
-  let b = num & 255;
-
-  r = Math.floor(r * (1 - percent));
-  g = Math.floor(g * (1 - percent));
-  b = Math.floor(b * (1 - percent));
-
-  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+type LogoItem = {
+  name: string;
+  src: string;
+  height: number;
 };
 
-/* ---------- FOLDER COMPONENT ---------- */
+const logos: LogoItem[] = [
+  { name: "1", src: "/images/1.jpeg", height: 40 },
+  { name: "2", src: "/images/2.jpeg", height: 40 },
+  { name: "3", src: "/images/3.jpeg", height: 40 },
+  { name: "4", src: "/images/4.jpeg", height: 40 },
+  { name: "5", src: "/images/5.jpeg", height: 40 },
+  { name: "6", src: "/images/6.jpeg", height: 40 },
+  { name: "7", src: "/images/7.jpeg", height: 40 },
+  { name: "8", src: "/images/8.jpeg", height: 40 },
+];
 
-function Folder({
-  color = "#ad46ff",
-  items = []
+function ComingSoonModal({
+  item,
+  onClose,
 }: {
-  color?: string;
-  items?: React.ReactNode[];
+  item: LogoItem;
+  onClose: () => void;
 }) {
-
-  const [open, setOpen] = useState(false);
-
-  const style: React.CSSProperties = {
-    "--folder-color": color,
-    "--folder-back-color": darkenColor(color, 0.08)
-  } as React.CSSProperties;
-
   return (
-
-    <div className="folder-container">
-
+    <div
+      onClick={onClose}
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+    >
       <div
-        className={`folder ${open ? "open" : ""}`}
-        style={style}
-        onClick={() => setOpen(!open)}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#111] p-8 rounded-2xl text-center"
       >
-
-        <div className="folder__back">
-
-          {items.map((item, i) => (
-            <div key={i} className={`paper paper-${i + 1}`}>
-              {item}
-            </div>
-          ))}
-
-          <div className="folder__front"></div>
-          <div className="folder__front right"></div>
-
-        </div>
-
+        <h2 className="text-white text-xl">{item.name}</h2>
+        <p className="text-gray-400 mt-2">Coming Soon ✨</p>
       </div>
-
     </div>
   );
 }
 
-/* ---------- PAGE ---------- */
+function LogoCard({ item }: { item: LogoItem }) {
+  return (
+    <div className="text-center">
+      <img
+        src={item.src}
+        alt={item.name}
+        className="h-[40px] object-contain mx-auto"
+      />
+      <p className="text-[10px] text-gray-400 mt-1">{item.name}</p>
+    </div>
+  );
+}
 
-export default function WorksPage() {
+export default function Page() {
+  const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [selected, setSelected] = useState<LogoItem | null>(null);
+
+  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setMouse({ x, y });
+  };
+
+  const toggle = () => {
+    if (open) {
+      setClosing(true);
+      setTimeout(() => {
+        setOpen(false);
+        setMounted(false);
+        setClosing(false);
+      }, 400);
+    } else {
+      setOpen(true);
+      setTimeout(() => setMounted(true), 20);
+    }
+  };
 
   return (
+    <main className="bg-black text-white min-h-screen">
 
-    <main className="works-page">
+      {/* OUR WORKS */}
+      <section
+        onMouseMove={handleMouseMove}
+        className="relative py-24 px-6 md:px-12 overflow-hidden"
+      >
+        {/* BACKGROUND */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
 
-      <h1 className="title">Our Works</h1>
+          {/* GRID */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(173,70,255,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(173,70,255,0.08) 1px, transparent 1px)
+              `,
+              backgroundSize: "40px 40px",
+              transform: `translate(${mouse.x * 10 - 5}px, ${
+                mouse.y * 10 - 5
+              }px)`,
+              transition: "transform 0.2s ease",
+            }}
+          />
 
-      <Folder
-        items={[
+          {/* RIPPLE */}
+          <div
+            className="absolute w-[600px] h-[600px] bg-[#ad46ff]/20 rounded-full blur-[120px] transition-all duration-200"
+            style={{
+              left: `${mouse.x * 100}%`,
+              top: `${mouse.y * 100}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        </div>
 
-          <div className="paper-content">
-            <h4>AI Video</h4>
+        {/* CONTENT */}
+        <div className="relative z-10">
 
-            <div className="works-scroll">
+          <div className="max-w-6xl mx-auto text-center">
+            <h2 className="text-5xl md:text-7xl font-black uppercase">
+              OUR WORKS
+            </h2>
 
-              <div className="work-card">
-                <video autoPlay muted loop>
-                  <source src="/amg.mp4" type="video/mp4"/>
-                </video>
-              </div>
+            <p className="text-gray-400 mt-4 max-w-xl mx-auto">
+              A selection of brands and projects we’ve worked with.
+            </p>
+          </div>
 
-              <div className="work-card logo">
-                <img src="/zenato.png"/>
-              </div>
+          {/* FOLDER */}
+          <div className="mt-20 flex justify-center">
+            <div className="relative w-[320px] h-[320px]">
 
-            </div>
-          </div>,
+              {(open || closing) &&
+                logos.map((logo, i) => {
+                  const angle = (i / logos.length) * 360;
+                  const rad = (angle * Math.PI) / 180;
+                  const x = Math.cos(rad) * 120;
+                  const y = Math.sin(rad) * 120;
 
-          <div className="paper-content">
-            <h4>Apps</h4>
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => !closing && setSelected(logo)}
+                      style={{
+                        position: "absolute",
+                        left: "50%",
+                        top: "50%",
+                        transform: `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${
+                          closing ? 0 : mounted ? 1 : 0
+                        })`,
+                        opacity: closing ? 0 : mounted ? 1 : 0,
+                        transition:
+                          "transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease",
+                        transitionDelay: `${i * 70}ms`,
+                      }}
+                    >
+                      <LogoCard item={logo} />
+                    </div>
+                  );
+                })}
 
-            <div className="works-scroll">
-
-              <div className="work-card">
-                <video autoPlay muted loop>
-                  <source src="/hyundai.mp4" type="video/mp4"/>
-                </video>
-              </div>
-
-              <div className="work-card logo">
-                <img src="/crizpo.png"/>
-              </div>
-
-            </div>
-          </div>,
-
-          <div className="paper-content">
-            <h4>Marketing</h4>
-
-            <div className="works-scroll">
-
-              <div className="work-card">
-                <video autoPlay muted loop>
-                  <source src="/myg.mp4" type="video/mp4"/>
-                </video>
+              {/* FOLDER ICON */}
+              <div
+                onClick={toggle}
+                className="absolute left-1/2 top-1/2 cursor-pointer"
+                style={{
+                  transform: open
+                    ? "translate(-50%, -50%) scale(1.08)"
+                    : "translate(-50%, -50%) scale(1)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <div className="w-[40px] h-[14px] bg-purple-400 rounded-t-md" />
+                <div className="w-[100px] h-[60px] bg-gradient-to-br from-[#ad46ff] to-purple-700 rounded-b-xl rounded-tr-xl shadow-lg" />
               </div>
 
             </div>
           </div>
+        </div>
+      </section>
 
-        ]}
-      />
+      {/* CONTACT */}
+      <section className="bg-black py-24 px-6 md:px-12">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
 
-      <style jsx global>{`
+          <div>
+            <h2 className="text-4xl md:text-6xl font-black">
+              LET’S BUILD <br />
+              <span className="text-[#ad46ff]">SOMETHING</span>
+            </h2>
+            <p className="text-gray-400 mt-6">
+              Drop your details and we’ll reach out.
+            </p>
+          </div>
 
-      body{
-        margin:0;
-      }
+          <form className="bg-[#111] p-8 rounded-2xl space-y-6">
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full p-3 bg-black border border-gray-700 rounded-lg"
+            />
+            <input
+              type="tel"
+              placeholder="Phone"
+              className="w-full p-3 bg-black border border-gray-700 rounded-lg"
+            />
+            <button className="w-full bg-[#ad46ff] py-3 rounded-lg">
+              GET IN TOUCH
+            </button>
+          </form>
 
-      .works-page{
-        min-height:100vh;
-        background:#000;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        color:white;
-        font-family:sans-serif;
-      }
+        </div>
+      </section>
 
-      .title{
-        font-size:72px;
-        font-weight:900;
-        margin-bottom:100px;
-      }
-
-      .folder-container{
-        width:100%;
-        height:0px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        position:relative;
-      }
-
-      .folder{
-        cursor:pointer;
-        position:relative;
-        transform-origin:center center;
-        transition:0.35s ease;
-      }
-
-      .folder:hover{
-        transform:translateY(-6px);
-      }
-
-      .folder__back{
-        position:relative;
-        width:120px;
-        height:90px;
-        background:var(--folder-back-color);
-        border-radius:0 12px 12px 12px;
-      }
-
-      .folder__back::after{
-        content:"";
-        position:absolute;
-        bottom:98%;
-        left:0;
-        width:40px;
-        height:12px;
-        background:var(--folder-back-color);
-        border-radius:5px 5px 0 0;
-      }
-
-      .folder__front{
-        position:absolute;
-        width:100%;
-        height:100%;
-        background:var(--folder-color);
-        border-radius:6px 12px 12px 12px;
-        transform-origin:bottom;
-        transition:0.3s;
-      }
-
-      .paper{
-        position:absolute;
-        bottom:10%;
-        left:50%;
-        transform:translate(-50%,10%);
-        width:280px;
-        height:200px;
-        background:white;
-        border-radius:14px;
-        padding:12px;
-        transition:0.4s;
-        opacity:0;
-      }
-
-      .paper:nth-child(2){
-        background:#f2f2f2;
-      }
-
-      .paper:nth-child(3){
-        background:#e6e6e6;
-      }
-
-      .folder.open .paper{
-        opacity:1;
-      }
-.folder.open .paper:nth-child(1){
-  transform:rotate(-40deg) translateY(-240px) rotate(40deg);
-}
-
-.folder.open .paper:nth-child(2){
-  transform:rotate(0deg) translateY(-260px) rotate(0deg);
-}
-
-.folder.open .paper:nth-child(3){
-  transform:rotate(40deg) translateY(-240px) rotate(-40deg);
-}
-      .folder.open .folder__front{
-        transform:skew(15deg) scaleY(0.6);
-      }
-
-      .folder.open .right{
-        transform:skew(-15deg) scaleY(0.6);
-      }
-
-      .paper-content h4{
-        color:#000;
-        font-size:14px;
-        margin-bottom:8px;
-        font-weight:700;
-      }
-
-      .works-scroll{
-        display:flex;
-        gap:10px;
-        overflow-x:auto;
-      }
-
-      .work-card{
-        min-width:120px;
-        height:90px;
-        border-radius:10px;
-        overflow:hidden;
-        background:black;
-      }
-
-      .work-card video{
-        width:100%;
-        height:100%;
-        object-fit:cover;
-      }
-
-      .work-card.logo{
-        display:flex;
-        align-items:center;
-        justify-content:center;
-      }
-
-      .work-card.logo img{
-        width:70%;
-      }
-
-      `}</style>
+      {/* MODAL */}
+      {selected && (
+        <ComingSoonModal
+          item={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
 
     </main>
   );
