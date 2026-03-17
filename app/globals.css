@@ -344,3 +344,37 @@
 .animate-scrollFast {
   animation: scrollUp 70s linear infinite;
 }
+
+/* scroll about us page first section */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+/* allow user scroll to take priority */
+.marquee-wrapper:active .animate-marquee,
+.marquee-wrapper:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+/* smooth touch scrolling */
+.marquee-wrapper {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -145,6 +145,26 @@ const y4 = useTransform(spread, v => v * 1)
   </div>
 
 </section>
+{/* MOBILE IMAGE SECTION */}
+<section className="md:hidden bg-black py-6 overflow-hidden">
+
+  <div className="marquee-wrapper overflow-x-auto no-scrollbar">
+
+    <div className="flex gap-4 w-max animate-marquee px-4">
+
+      {[...images, ...images].map((src, i) => (
+        <img
+          key={i}
+          src={src}
+          className="w-32 h-44 object-cover rounded-2xl flex-shrink-0"
+        />
+      ))}
+
+    </div>
+
+  </div>
+
+</section>
 
 <section className="w-full bg-white overflow-hidden py-4">
 

@@ -156,7 +156,7 @@ export default function WorksPage() {
 
       .folder-container{
         width:100%;
-        height:600px;
+        height:0px;
         display:flex;
         align-items:center;
         justify-content:center;

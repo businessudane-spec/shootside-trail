@@ -49,16 +49,13 @@ export default function MentoringSection() {
             style={{ zIndex: index + 1 }}
           >
 
-            <div className={`max-w-4xl px-12 text-center ${item.textColor}`}>
-
-              <h2 className="text-5xl font-bold mb-8">
-                {item.title}
+<div className={`w-full max-w-4xl mx-auto px-6 md:px-12 text-center ${item.textColor}`}>
+<h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 md:mb-8 leading-tight">                {item.title}
               </h2>
 
               <div className="w-full h-[1px] bg-current opacity-40 mb-8"></div>
 
-              <p className="text-lg leading-relaxed">
-                {item.text}
+<p className="text-sm sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto">                {item.text}
               </p>
 
             </div>
