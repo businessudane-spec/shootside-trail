@@ -12,7 +12,7 @@ export default function Header() {
 const menuItems = [
   { name: "Home", link: "/" },
   { name: "About", link: "/about" },
-  { name: "Works", link: "/#works" }, // 👈 ADD THIS
+  { name: "Works", link: "/works" }, 
 ];
 
   return (
