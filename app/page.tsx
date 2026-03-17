@@ -112,7 +112,7 @@ useEffect(() => {
 
     {/* logos */}
     <img src="/Wattle-White-Text-Logo.svg" className="h-[30px] opacity-90" />
-    <img src="/crizpo.png" className="h-[30px] opacity-90" />
+    <img src="/CRIZPO.png" className="h-[30px] opacity-90" />
     <img src="/zenato.png" className="h-[35px] opacity-90" />
     <img src="https://www.myg.in/images/logos/1/site-Logo.png" className="h-[15px] opacity-90" />
     <img src="https://www.hyundai.com/content/dam/hyundai/ww/en/images/main/new/common/logo-wh.png" className="h-[15px] opacity-90" />
