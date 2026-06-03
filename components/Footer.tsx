@@ -113,33 +113,6 @@ export default function Footer() {
             gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           }}
         >
-          {/* Pages */}
-          <div>
-            <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 22 }}>
-              Pages
-            </p>
-            <nav className="flex flex-col gap-3">
-              <a href="/" className="footer-link">Home</a>
-              <a href="/services" className="footer-link">Services</a>
-              <a href="/portfolio" className="footer-link">Our Work</a>
-              <a href="/contact" className="footer-link">Contact</a>
-            </nav>
-          </div>
-
-          {/* Works */}
-          <div>
-            <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 22 }}>
-              Our Works
-            </p>
-            <nav className="flex flex-col gap-3">
-              <a href="#" className="footer-link">Branding</a>
-              <a href="#" className="footer-link">Creative Posters</a>
-              <a href="#" className="footer-link">Motion Creatives</a>
-              <a href="#" className="footer-link">Web Design</a>
-              <a href="#" className="footer-link">Marketing</a>
-            </nav>
-          </div>
-
           {/* Address */}
           <div>
             <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 22 }}>

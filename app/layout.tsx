@@ -1,6 +1,6 @@
 import "./globals.css";
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 import { Poppins, Barlow_Condensed, Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
