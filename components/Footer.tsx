@@ -120,17 +120,15 @@ export default function Footer() {
             </p>
 
             <address style={{ fontStyle: "normal", lineHeight: 1.9 }}>
-              Hilite Business Park,<br />
-              Ground Floor,<br />
-              Kozhikode, Kerala
+              KUNNAMANGALAM PANTEERPADAM 673571
             </address>
 
             <p style={{ marginTop: 18, fontWeight: 600 }}>
-              Support: +91 73061 66866
+              Support: <a href="tel:+917306166866" className="footer-link">+91 73061 66866</a>
             </p>
 
             <p style={{ marginTop: 8 }}>
-              Email: connect.shootside@gmail.com
+              Email: <a href="mailto:connect.shootside@gmail.com" className="footer-link">connect.shootside@gmail.com</a>
             </p>
           </div>
         </div>

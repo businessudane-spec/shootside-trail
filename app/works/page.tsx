@@ -42,65 +42,29 @@ type BTSItem = {
 const works: WorkItem[] = [
   {
     id: 1,
-    title: "AMG × Shootside",
-    client: "Mercedes-AMG",
+    title: "MYG × Shootside — Brand Film Ad",
+    client: "MYG",
     category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DZFB_ZTCHmJ/",
-    tag: "BRAND FILM",
+    type: "video",
+    src: "/myg institute.mp4",
+    tag: "BRAND FILM AD",
   },
   {
     id: 2,
     title: "MYG × Shootside",
     client: "MYG",
     category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DU-mucaiQUs/",
+    type: "video",
+    src: "/myg 2.mp4",
     tag: "CAMPAIGN",
   },
   {
     id: 3,
-    title: "MYG × Shootside — Campaign",
-    client: "MYG",
-    category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DUInkA1j-C-/",
-    tag: "CAMPAIGN ADS",
-  },
-  {
-    id: 4,
-    title: "MYG × Shootside — Scripted",
-    client: "MYG",
-    category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DRbULQTDgJZ/",
-    tag: "SCRIPTED",
-  },
-  {
-    id: 5,
-    title: "Hyundai × Shootside — KVR I",
-    client: "Hyundai",
-    category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DTktCOulQpV/",
-    tag: "KVR",
-  },
-  {
-    id: 6,
-    title: "Hyundai × Shootside — KVR II",
-    client: "Hyundai",
-    category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DSjVT4Agm0s/",
-    tag: "KVR",
-  },
-  {
-    id: 7,
     title: "MYG × Shootside — Power Packed",
     client: "MYG",
     category: "All",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DQlfEBYAYgm/",
+    type: "video",
+    src: "/myg powerpacked.mp4",
     tag: "POWER PACKED",
   },
 ];
@@ -112,26 +76,26 @@ const btsItems: BTSItem[] = [
   {
     id: 1,
     title: "BTS — MYG Campaign",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DUYIqqBiW-O/",
+    type: "video",
+    src: "/myg 2 bts.mp4",
   },
   {
     id: 2,
-    title: "BTS — MYG Scripted I",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DTvFIqciWCd/",
+    title: "BTS — KVR II",
+    type: "video",
+    src: "/kvr bts 2.mp4",
   },
   {
     id: 3,
-    title: "BTS — MYG Scripted II",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DTnWmZ5iUqm/",
+    title: "BTS — MYG Power Packed",
+    type: "video",
+    src: "/powerpacked mygbts.MP4",
   },
   {
     id: 4,
-    title: "BTS — MYG Power Packed",
-    type: "instagram",
-    src: "https://www.instagram.com/reel/DQlfEBYAYgm/",
+    title: "BTS — MYG Police",
+    type: "video",
+    src: "/myg-police.MOV",
   },
 ];
 
@@ -295,7 +259,8 @@ function WorkCard({ item, onClick }: { item: WorkItem; onClick: () => void }) {
         ) : item.type === "video" ? (
           <video
             ref={videoRef}
-            src={item.src}
+            src={item.src.includes("#") ? item.src : `${item.src}#t=0.1`}
+            preload="metadata"
             muted
             loop
             playsInline
@@ -371,7 +336,8 @@ function BTSCard({ item, onClick }: { item: BTSItem; onClick: () => void }) {
         ) : item.type === "video" ? (
           <video
             ref={videoRef}
-            src={item.src}
+            src={item.src.includes("#") ? item.src : `${item.src}#t=0.1`}
+            preload="metadata"
             muted
             loop
             playsInline
