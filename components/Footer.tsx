@@ -1,92 +1,39 @@
 "use client";
 
 import { Instagram, Linkedin, MessageCircle, Mail } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   return (
     <footer
-      className="relative overflow-hidden text-white w-full"
+      className="relative overflow-hidden text-white bg-black border-t border-white/5 w-full"
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
-        .blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(120px);
-          opacity: 0.65;
-          animation: float 22s ease-in-out infinite;
-          mix-blend-mode: screen;
-          pointer-events:none;
-        }
-
-        .blob2 { animation-delay: 8s; }
-        .blob3 { animation-delay: 4s; }
-
-        @keyframes float {
-          0%   { transform: translate(0px, 0px) scale(1); }
-          25%  { transform: translate(140px, -90px) scale(1.25); }
-          50%  { transform: translate(-120px, 70px) scale(0.9); }
-          75%  { transform: translate(80px, 120px) scale(1.15); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-
         .footer-link {
-          color: white;
+          color: rgba(255,255,255,0.7);
           text-decoration: none;
           font-weight: 500;
-          font-size: 15px;
-          transition: opacity 0.2s;
+          font-size: 14px;
+          transition: color 0.2s;
         }
 
         .footer-link:hover {
-          opacity: 0.75;
+          color: #ad46ff;
         }
 
         .social-icon {
-          color: white;
-          transition: transform 0.25s ease, opacity 0.25s ease;
+          color: rgba(255,255,255,0.6);
+          transition: transform 0.25s ease, color 0.25s ease;
         }
 
         .social-icon:hover {
           transform: translateY(-4px) scale(1.1);
-          opacity: 0.9;
+          color: #ad46ff;
         }
       `}</style>
-
-      {/* Floating Blobs */}
-      <div
-        className="blob"
-        style={{
-          width: 550,
-          height: 550,
-          top: "-200px",
-          left: "-200px",
-        }}
-      />
-
-      <div
-        className="blob blob2"
-        style={{
-          width: 450,
-          height: 450,
-          background: "#ff66ff",
-          bottom: "-150px",
-          right: "-150px",
-        }}
-      />
-
-      <div
-        className="blob blob3"
-        style={{
-          width: 380,
-          height: 380,
-          background: "#9d00ff",
-          top: "40%",
-          left: "55%",
-        }}
-      />
 
       {/* CONTENT CONTAINER */}
       <div className="relative z-10 max-w-7xl mx-auto px-6">
@@ -94,6 +41,7 @@ export default function Footer() {
         {/* Brand */}
         <div className="pt-16">
           <h1
+            className="text-white bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
             style={{
               fontWeight: 900,
               fontSize: "clamp(48px, 9vw, 100px)",
@@ -104,6 +52,9 @@ export default function Footer() {
           >
             SHOOTSIDE
           </h1>
+          <p className="text-gray-400 mt-2 text-sm max-w-sm">
+            Technology That Powers Your Business.
+          </p>
         </div>
 
         {/* Main Grid */}
@@ -113,22 +64,31 @@ export default function Footer() {
             gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           }}
         >
-          {/* Address */}
+          {/* Quick Links */}
           <div>
-            <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 22 }}>
-              Office Address
+            <p className="text-white font-bold" style={{ fontSize: 16, marginBottom: 22 }}>
+              Quick Links
             </p>
+            <ul className="space-y-3">
+              <li><Link href="#home" className="footer-link">Home</Link></li>
+              <li><Link href="#about" className="footer-link">About</Link></li>
+              <li><Link href="#services" className="footer-link">Services</Link></li>
+              <li><Link href="#contact" className="footer-link">Contact</Link></li>
+            </ul>
+          </div>
 
-            <address style={{ fontStyle: "normal", lineHeight: 1.9 }}>
-              KUNNAMANGALAM PANTEERPADAM 673571
-            </address>
-
-            <p style={{ marginTop: 18, fontWeight: 600 }}>
-              Support: <a href="tel:+917306166866" className="footer-link">+91 73061 66866</a>
+          {/* Contact Details */}
+          <div>
+            <p className="text-white font-bold" style={{ fontSize: 16, marginBottom: 22 }}>
+              Get in Touch
             </p>
 
             <p style={{ marginTop: 8 }}>
               Email: <a href="mailto:connect.shootside@gmail.com" className="footer-link">connect.shootside@gmail.com</a>
+            </p>
+
+            <p style={{ marginTop: 8 }}>
+              Phone: <a href="tel:+917306166866" className="footer-link">+91 73061 66866</a>
             </p>
           </div>
         </div>
@@ -136,7 +96,7 @@ export default function Footer() {
         {/* Bottom */}
         <div
           className="flex flex-col items-center gap-6 pb-10 pt-6"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.25)" }}
+          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
         >
           <div className="flex gap-8">
             <a
@@ -171,7 +131,8 @@ export default function Footer() {
             </a>
           </div>
 
-          <p style={{ fontSize: 14, opacity: 0.95 }}>
+
+          <p className="text-slate-500" style={{ fontSize: 14 }}>
             © 2026 ShootSide. All rights reserved.
           </p>
         </div>
@@ -179,4 +140,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+}
