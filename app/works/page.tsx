@@ -41,6 +41,15 @@ type BTSItem = {
 // ─────────────────────────────────────────────
 const works: WorkItem[] = [
   {
+    id: 8,
+    title: "When the debate ends, Football begins",
+    client: "FIFA",
+    category: "All",
+    type: "video",
+    src: "/football-debate.mp4",
+    tag: "BRAND AD",
+  },
+  {
     id: 1,
     title: "MYG × Shootside — Brand Film Ad",
     client: "MYG",
@@ -109,6 +118,12 @@ const works: WorkItem[] = [
 // BTS
 // ─────────────────────────────────────────────
 const btsItems: BTSItem[] = [
+  {
+    id: 6,
+    title: "BTS — FIFA Fever Kozhikode",
+    type: "video",
+    src: "/fifa-fever-bts.mp4",
+  },
   {
     id: 1,
     title: "BTS — MYG Campaign",
