@@ -21,27 +21,23 @@ export const blogPosts: BlogPost[] = [
     readTime: "3 min read",
     image: "/blog_ai_vfx.png",
     instagramEmbed: "https://www.instagram.com/reel/Da0TXHsJE8Y/",
-    tags: ["AI", "Artificial Intelligence", "AI Editing", "VFX", "Visual Effects", "Car Replacement", "AI Filmmaking"],
+    tags: ["AI", "Artificial Intelligence", "AI Editing", "VFX", "Visual Effects", "Car Replacement", "AI Workflow", "AI Filmmaking"],
     content: `
-# AI Breakdown: Replacing Objects in Motion
+# AI Breakdown: Car-to-Van Object Replacement
 
-Technology meets creativity. Replacing a moving object in a video used to take visual effects teams days of manual tracking, masking, rotoscoping, and 3D modeling. With modern generative AI workflows, we can achieve seamless object replacement in hours.
+Technology meets creativity. Replacing a moving object in a dynamic visual sequence used to require visual effects teams to spend days manually tracking, rotoscoping, and 3D modeling. With modern generative AI workflows, we can achieve seamless object replacement in hours.
 
-In our latest project, we replaced a moving car with a van—making the dynamic transition look completely natural. Here's a breakdown of the planning, workflow, and technology that brought this vision to life.
+In our latest project, we replaced a moving car with a van—making the transition look completely natural. This breakdown takes you through the workflow, the planning, and the final result that brought the vision to life.
 
-## The Planning & Scoping
-Before editing, we analyze the footage to track:
-1. **Camera Motion**: Handheld shakes, panning speed, and focal lengths.
-2. **Lighting & Shadows**: The replacement van must catch the sun reflections and cast ground shadows matching the original environment.
-3. **Occlusions**: Objects passing in front of or behind the vehicle.
+## From a Single Prompt to a Seamless Transformation
 
-## The AI VFX Workflow
-We used a hybrid pipeline combining traditional tracking with generative image-to-image and depth-aware video networks:
-- **Masking & Rotoscoping**: Segmenting the original car using depth-aware selection models.
-- **Inpainting & Generation**: Promoting a van design matching the perspective angle using a single text prompt.
-- **Color Grading**: Matching the grain, shadows, and light reflections to blend the generated van into the scene.
+Here’s how we used AI to replace a car with a van—making the impossible look completely natural. This breakdown takes you through the workflow, the planning, and the final result that brought the vision to life.
 
-Watch the breakdown reel below to see the before-and-after workflow in action!
+1. **Precision Rotoscoping**: Masking the moving vehicle using depth-aware AI models to ensure clean borders.
+2. **Generative Inpainting**: Prompting the AI model with detailed parameters to generate a realistic van matching the perspective, lighting angles, and texture of the original footage.
+3. **Lighting & Shadow Matching**: Re-creating the ground shadows and sunlight reflections on the van surface to integrate it seamlessly into the environment.
+
+Watch the complete visual breakdown on our official Instagram feed (@shootside.in) embedded below.
     `
   },
   {
