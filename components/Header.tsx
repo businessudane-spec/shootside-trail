@@ -100,6 +100,9 @@ export default function Header() {
           <Link href="/ads" className="text-xs font-semibold uppercase tracking-wider text-white/70 hover:text-white transition-colors">
             Ads
           </Link>
+          <Link href="/blog" className="text-xs font-semibold uppercase tracking-wider text-white/70 hover:text-white transition-colors">
+            Blog
+          </Link>
         </nav>
 
         {/* RIGHT CTA BUTTON & HAMBURGER TOGGLE */}
@@ -216,6 +219,13 @@ export default function Header() {
               className="text-sm font-semibold uppercase tracking-wider text-white/80 hover:text-white py-2 border-b border-white/5"
             >
               Ads
+            </Link>
+            <Link
+              href="/blog"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm font-semibold uppercase tracking-wider text-white/80 hover:text-white py-2 border-b border-white/5"
+            >
+              Blog
             </Link>
           </div>
 
