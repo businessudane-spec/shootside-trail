@@ -28,6 +28,12 @@ export default function BlogIndexPage() {
             <rect width="100%" height="100%" fill="url(#blogGrid)" />
           </svg>
 
+          {/* Real Background Graphic Image Overlay */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-[0.32] mix-blend-screen pointer-events-none"
+            style={{ backgroundImage: `url('/blog_banner_bg.png')` }} 
+          />
+
           <div className="max-w-6xl mx-auto px-6 relative z-10">
             <span className="block text-xs font-bold uppercase tracking-[4px] text-purple-500 mb-3">Insights & Analysis</span>
             <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight leading-none mb-6">
@@ -56,9 +62,12 @@ export default function BlogIndexPage() {
                     className="group border border-slate-200/60 rounded-3xl bg-slate-50 hover:bg-slate-100/50 p-6 md:p-10 transition-all duration-300 grid md:grid-cols-12 gap-8 items-center"
                   >
                     {/* Image Block */}
-                    <div className="md:col-span-4 relative aspect-[4/3] rounded-2xl overflow-hidden bg-black/5 flex items-center justify-center border border-slate-200">
-                      {/* Simple SVG icon matching category */}
-                      <BookOpen className="w-12 h-12 text-purple-600/30 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="md:col-span-4 relative aspect-[4/3] rounded-2xl overflow-hidden bg-black/5 border border-slate-200">
+                      <img 
+                        src={post.image} 
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                       <div className="absolute top-4 left-4 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-wider">
                         {post.category}
                       </div>
