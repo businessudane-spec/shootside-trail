@@ -42,31 +42,31 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
   const apiUrl = pmApi.getApiBaseUrl();
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between shadow-2xs transition-colors duration-200">
+    <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-2.5 sm:px-4 md:px-8 flex items-center justify-between gap-2 shadow-2xs transition-colors duration-200">
       {/* Left: Mobile-only Hamburger & Search Bar */}
-      <div className="flex items-center space-x-3 md:space-x-4 flex-1 max-w-2xl">
+      <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0 max-w-2xl">
         <button
           onClick={onToggleSidebar}
-          className="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+          className="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0"
           title="Toggle Navigation Menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         {/* Global Search Bar */}
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="relative flex-1 min-w-0 max-w-xs md:max-w-md">
+          <Search className="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search projects, tasks, deliverables..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/10 transition-all"
+            className="w-full pl-8 sm:pl-10 pr-4 py-1.5 sm:py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/10 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             >
               Clear
             </button>
@@ -75,10 +75,10 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center space-x-2 sm:space-x-3">
+      <div className="flex items-center space-x-1.5 sm:space-x-2 md:space-x-3 shrink-0">
         {/* Live DB Endpoint Indicator */}
         <div
-          className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold"
+          className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold shrink-0"
           title={`Connected to Live REST API: ${apiUrl}`}
         >
           <Database className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
@@ -86,7 +86,7 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
         </div>
 
         {/* Quick Project Filter */}
-        <div className="hidden lg:flex items-center space-x-2">
+        <div className="hidden lg:flex items-center space-x-2 shrink-0">
           <select
             value={selectedProjectId || ''}
             onChange={e => setSelectedProjectId(e.target.value ? Number(e.target.value) : null)}
@@ -118,7 +118,7 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
         <button
           onClick={toggleTheme}
           title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer flex items-center space-x-1.5 shadow-2xs"
+          className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer flex items-center space-x-1.5 shadow-2xs shrink-0"
         >
           {isDark ? (
             <>
@@ -138,33 +138,33 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
           onClick={() => refreshAll()}
           disabled={isLoading}
           title="Refresh Data"
-          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
         </button>
 
         {/* Notifications */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <PMNotificationsDropdown />
         </div>
 
         {/* User Auth Section (Logged In / Logged Out) */}
-        <div className="flex items-center pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">
+        <div className="flex items-center pl-1.5 sm:pl-3 border-l border-slate-200 dark:border-slate-800 shrink-0">
           {user ? (
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-1.5 sm:space-x-3">
               <button
                 onClick={openProfileModal}
-                className="flex items-center space-x-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer text-left group"
+                className="flex items-center space-x-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer text-left group shrink-0"
                 title="Edit Profile & Credentials"
               >
                 {user.avatar ? (
                   <img
                     src={user.avatar}
                     alt={user.name}
-                    className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 object-cover shrink-0 group-hover:ring-2 group-hover:ring-blue-500/30 transition-all"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 dark:border-slate-700 object-cover shrink-0 group-hover:ring-2 group-hover:ring-blue-500/30 transition-all"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 uppercase shadow-2xs">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 uppercase shadow-2xs">
                     {user.name ? user.name.charAt(0) : user.username.charAt(0)}
                   </div>
                 )}
@@ -188,20 +188,20 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
 
               <button
                 onClick={() => logout()}
-                className="text-xs px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer font-semibold flex items-center space-x-1.5"
+                className="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer font-semibold flex items-center space-x-1.5 shrink-0"
                 title="Log Out"
               >
-                <LogOut className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hover:text-rose-600" />
+                <LogOut className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 shrink-0" />
                 <span className="hidden md:inline">Log Out</span>
               </button>
             </div>
           ) : (
             <button
               onClick={openLoginModal}
-              className="text-xs px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all cursor-pointer flex items-center space-x-1.5 shadow-xs"
+              className="text-xs px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all cursor-pointer flex items-center space-x-1.5 shadow-xs shrink-0"
             >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Log In</span>
+              <LogIn className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden xs:inline">Log In</span>
             </button>
           )}
         </div>

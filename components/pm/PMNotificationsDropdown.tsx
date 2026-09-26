@@ -51,10 +51,10 @@ export const PMNotificationsDropdown: React.FC = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative shrink-0" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer"
+        className="relative p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shrink-0"
         title="Notifications"
       >
         <Bell className="w-4 h-4" />
@@ -66,12 +66,12 @@ export const PMNotificationsDropdown: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-          <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden">
+          <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-slate-900">Notifications</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">Notifications</span>
               {unreadNotificationsCount > 0 && (
-                <span className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-700 font-semibold">
+                <span className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold">
                   {unreadNotificationsCount} new
                 </span>
               )}
@@ -80,7 +80,7 @@ export const PMNotificationsDropdown: React.FC = () => {
             {notifications.length > 0 && (
               <button
                 onClick={() => markAllNotificationsRead()}
-                className="text-[11px] text-slate-500 hover:text-blue-600 flex items-center space-x-1 cursor-pointer transition-colors"
+                className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center space-x-1 cursor-pointer transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>Mark all read</span>
@@ -88,10 +88,10 @@ export const PMNotificationsDropdown: React.FC = () => {
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-400">
-                <Bell className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+              <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                <Bell className="w-6 h-6 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
                 No notifications right now
               </div>
             ) : (
