@@ -42,6 +42,7 @@ interface PMSidebarProps {
   setCurrentView: (v: PMView) => void;
   openCreateTask: () => void;
   openCreateProject: () => void;
+  openProfileModal: () => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   isMobileOpen: boolean;
@@ -53,6 +54,7 @@ export const PMSidebar: React.FC<PMSidebarProps> = ({
   setCurrentView,
   openCreateTask,
   openCreateProject,
+  openProfileModal,
   isCollapsed,
   setIsCollapsed,
   isMobileOpen,
@@ -308,52 +310,54 @@ export const PMSidebar: React.FC<PMSidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom Profile & Role Switcher */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50/80 space-y-2">
-        {!isCollapsed && (
-          <div className="p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
-            <div className="flex items-center justify-between text-[11px] mb-1 text-slate-500 font-medium">
-              <span>Role Simulator:</span>
-              <span className="font-bold text-blue-600">{user?.role}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              <button
-                onClick={() => switchUserRole('ADMIN')}
-                className={`text-[10px] py-1 rounded-md font-semibold transition-all ${
-                  isAdmin
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Admin
-              </button>
-              <button
-                onClick={() => switchUserRole('MEMBER')}
-                className={`text-[10px] py-1 rounded-md font-semibold transition-all ${
-                  isMember
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Member
-              </button>
-            </div>
+      {/* Bottom Profile Information */}
+      <div className="p-3 border-t border-slate-200 bg-slate-50/80">
+        {user ? (
+          <button
+            onClick={openProfileModal}
+            className={`w-full flex items-center ${
+              isCollapsed ? 'justify-center px-0' : 'space-x-2.5 px-1.5'
+            } py-1.5 rounded-xl hover:bg-white hover:shadow-2xs border border-transparent hover:border-slate-200 transition-all cursor-pointer text-left group`}
+            title="Edit Profile & Password"
+          >
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt="User avatar"
+                className="w-8 h-8 rounded-full border border-slate-200 object-cover shrink-0 group-hover:ring-2 group-hover:ring-blue-500/30 transition-all"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 uppercase shadow-2xs">
+                {user?.name ? user.name.charAt(0) : (user?.username ? user.username.charAt(0) : 'U')}
+              </div>
+            )}
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600 truncate transition-colors">
+                    {user?.name}
+                  </p>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                      isAdmin
+                        ? 'bg-rose-100 text-rose-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}
+                  >
+                    {isAdmin ? 'ADMIN' : 'MEMBER'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+              </div>
+            )}
+          </button>
+        ) : (
+          <div className="px-1 py-1 text-center">
+            {!isCollapsed && (
+              <p className="text-xs text-slate-500 font-medium">Guest (Not Logged In)</p>
+            )}
           </div>
         )}
-
-        <div className="flex items-center space-x-2.5 px-1 py-1">
-          <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-            alt="User avatar"
-            className="w-8 h-8 rounded-full border border-slate-200 object-cover shrink-0"
-          />
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
-              <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
-            </div>
-          )}
-        </div>
       </div>
     </aside>
   );

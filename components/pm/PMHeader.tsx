@@ -6,7 +6,9 @@ import {
   Search,
   RefreshCw,
   Database,
-  CheckCircle2
+  LogIn,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
@@ -16,10 +18,11 @@ import { pmApi } from '@/lib/pm-api';
 interface PMHeaderProps {
   onToggleSidebar: () => void;
   openLoginModal: () => void;
+  openProfileModal: () => void;
 }
 
-export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginModal }) => {
-  const { user } = usePMAuth();
+export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginModal, openProfileModal }) => {
+  const { user, logout, isAdmin } = usePMAuth();
   const {
     searchQuery,
     setSearchQuery,
@@ -36,11 +39,11 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 flex items-center justify-between shadow-2xs">
-      {/* Left: Hamburger Toggle & Search */}
+      {/* Left: Mobile-only Hamburger & Search Bar */}
       <div className="flex items-center space-x-3 md:space-x-4 flex-1 max-w-2xl">
         <button
           onClick={onToggleSidebar}
-          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer border border-slate-200"
+          className="md:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer border border-slate-200"
           title="Toggle Navigation Menu"
         >
           <Menu className="w-5 h-5" />
@@ -122,14 +125,62 @@ export const PMHeader: React.FC<PMHeaderProps> = ({ onToggleSidebar, openLoginMo
           <PMNotificationsDropdown />
         </div>
 
-        {/* WordPress Auth Button */}
-        <div className="flex items-center pl-2 border-l border-slate-200">
-          <button
-            onClick={openLoginModal}
-            className="text-xs px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-all cursor-pointer font-bold flex items-center space-x-1"
-          >
-            <span>WP Auth</span>
-          </button>
+        {/* User Auth Section (Logged In / Logged Out) */}
+        <div className="flex items-center pl-3 border-l border-slate-200">
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={openProfileModal}
+                className="flex items-center space-x-2 p-1 rounded-xl hover:bg-slate-100 transition-all cursor-pointer text-left group"
+                title="Edit Profile & Credentials"
+              >
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full border border-slate-200 object-cover shrink-0 group-hover:ring-2 group-hover:ring-blue-500/30 transition-all"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 uppercase shadow-2xs">
+                    {user.name ? user.name.charAt(0) : user.username.charAt(0)}
+                  </div>
+                )}
+                <div className="hidden sm:block text-left">
+                  <div className="text-xs font-bold text-slate-900 group-hover:text-blue-600 leading-tight truncate max-w-[120px] transition-colors">
+                    {user.name}
+                  </div>
+                  <div className="text-[10px] font-semibold mt-0.5">
+                    {isAdmin ? (
+                      <span className="text-rose-700 font-bold bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                        Admin
+                      </span>
+                    ) : (
+                      <span className="text-blue-700 font-bold bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-md">
+                        Member
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => logout()}
+                className="text-xs px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-700 border border-slate-200 transition-all cursor-pointer font-semibold flex items-center space-x-1.5"
+                title="Log Out"
+              >
+                <LogOut className="w-3.5 h-3.5 text-slate-500 hover:text-rose-600" />
+                <span className="hidden md:inline">Log Out</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={openLoginModal}
+              className="text-xs px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all cursor-pointer flex items-center space-x-1.5 shadow-xs"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Log In</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

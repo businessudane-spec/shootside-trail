@@ -12,6 +12,7 @@ interface PMAuthContextType {
   isMember: boolean;
   login: (username: string, pass: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string; password?: string; avatar?: string }) => Promise<{ success: boolean; message?: string }>;
   switchUserRole: (role: UserRole) => void;
   setUser: (user: PMUser | null) => void;
 }
@@ -33,28 +34,13 @@ export const PMAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (res.success && res.data) {
           setUser(res.data);
         } else {
-          // Default to Admin profile for instant view
-          setUser({
-            id: 1,
-            name: 'Admin ShootSide',
-            username: 'admin',
-            email: 'admin@shootside.in',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            role: 'ADMIN',
-            status: 'active'
-          });
+          // Token is expired or invalid
+          pmApi.logout();
+          setToken(null);
+          setUser(null);
         }
       } else {
-        // Provide default admin preview session
-        setUser({
-          id: 1,
-          name: 'Admin ShootSide',
-          username: 'admin',
-          email: 'admin@shootside.in',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-          role: 'ADMIN',
-          status: 'active'
-        });
+        setUser(null);
       }
       setIsLoading(false);
     };
@@ -79,6 +65,18 @@ export const PMAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await pmApi.logout();
     setToken(null);
     setUser(null);
+  };
+
+  const updateProfile = async (data: { name?: string; email?: string; password?: string; avatar?: string }) => {
+    setIsLoading(true);
+    const res = await pmApi.updateProfile(data);
+    setIsLoading(false);
+
+    if (res.success && res.data) {
+      setUser(res.data);
+      return { success: true, message: res.message || 'Profile updated successfully' };
+    }
+    return { success: false, message: res.message || 'Failed to update profile' };
   };
 
   const switchUserRole = (role: UserRole) => {
@@ -118,6 +116,7 @@ export const PMAuthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isMember,
         login,
         logout,
+        updateProfile,
         switchUserRole,
         setUser
       }}

@@ -19,9 +19,13 @@ import { PMCreateTaskModal } from '@/components/pm/PMCreateTaskModal';
 import { PMCreateProjectModal } from '@/components/pm/PMCreateProjectModal';
 import { PMTaskDetailDrawer } from '@/components/pm/PMTaskDetailDrawer';
 import { PMLoginModal } from '@/components/pm/PMLoginModal';
+import { PMProfileModal } from '@/components/pm/PMProfileModal';
+import { PMLoginScreen } from '@/components/pm/PMLoginScreen';
+import { usePMAuth } from '@/lib/pm-auth-context';
 import { PMTask, PMProject } from '@/lib/pm-types';
 
 function PMAppContent() {
+  const { user, isLoading } = usePMAuth();
   const [currentView, setCurrentView] = useState<PMView>('dashboard');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -30,6 +34,7 @@ function PMAppContent() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const { selectedTask, setSelectedTask, selectedProject, setSelectedProject } = usePMData();
 
@@ -50,6 +55,23 @@ function PMAppContent() {
     }
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-slate-500">Loading ShootSide Workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in -> Show secure Login Screen
+  if (!user) {
+    return <PMLoginScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans">
       <div className="flex flex-1">
@@ -62,6 +84,7 @@ function PMAppContent() {
           }}
           openCreateTask={() => setIsCreateTaskOpen(true)}
           openCreateProject={() => setIsCreateProjectOpen(true)}
+          openProfileModal={() => setIsProfileModalOpen(true)}
           isCollapsed={isCollapsed}
           setIsCollapsed={setIsCollapsed}
           isMobileOpen={isMobileOpen}
@@ -82,10 +105,11 @@ function PMAppContent() {
             isCollapsed ? 'md:pl-20' : 'md:pl-64'
           }`}
         >
-          {/* Top Header with Hamburger Button */}
+          {/* Top Header */}
           <PMHeader
             onToggleSidebar={toggleSidebar}
             openLoginModal={() => setIsLoginModalOpen(true)}
+            openProfileModal={() => setIsProfileModalOpen(true)}
           />
 
           {/* Main Dashboard / View Container */}
@@ -173,6 +197,11 @@ function PMAppContent() {
       <PMLoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      <PMProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
       />
 
       {selectedTask && (

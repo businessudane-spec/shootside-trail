@@ -79,6 +79,18 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedProject, setSelectedProject] = useState<PMProject | null>(null);
 
   const refreshAll = useCallback(async () => {
+    if (!user) {
+      setProjects([]);
+      setTasks([]);
+      setUsers([]);
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+      setActivityLogs([]);
+      setDeletedItems({ projects: [], tasks: [] });
+      setStatistics(null);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const [pRes, tRes, uRes, nRes, aRes, dRes, sRes] = await Promise.all([
@@ -106,7 +118,7 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     refreshAll();
@@ -172,15 +184,6 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const updateTask = async (id: number, data: Partial<PMTask>) => {
-    const existing = tasks.find(t => t.id === id);
-    // Strict Member Rule Verification: If member attempts reassignment on existing task
-    if (existing && data.assigned_to_id && data.assigned_to_id !== existing.assigned_to_id && !isAdmin) {
-      return {
-        success: false,
-        message: 'Permission Denied: Only Administrators can reassign existing tasks.'
-      };
-    }
-
     const res = await pmApi.updateTask(id, data);
     if (res.success) {
       await refreshAll();

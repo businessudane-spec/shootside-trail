@@ -16,7 +16,12 @@ import {
   Save,
   FileText,
   UploadCloud,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  ArrowRight,
+  UserCheck,
+  Edit3,
+  History
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
@@ -93,16 +98,13 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
       description,
       status,
       priority,
+      assigned_to_id: Number(assignedToId),
       start_date: startDate || null,
       due_date: dueDate || null,
       estimated_hours: Number(estimatedHours) || 0,
       actual_hours: Number(actualHours) || 0,
       progress: Number(progress) || 0
     };
-
-    if (isAdmin) {
-      payload.assigned_to_id = Number(assignedToId);
-    }
 
     const res = await updateTask(task.id, payload);
     setIsSaving(false);
@@ -134,6 +136,171 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
       await deleteTask(task.id);
       onClose();
     }
+  };
+
+  const getActivityDetails = (act: PMActivityLog) => {
+    const action = act.action;
+
+    if (action === 'created') {
+      return {
+        title: 'Created task',
+        description: null,
+        icon: <FileText className="w-3.5 h-3.5 text-blue-600" />,
+        tag: 'Created',
+        tagColor: 'bg-blue-50 text-blue-700 border-blue-200'
+      };
+    }
+    if (action === 'reassigned') {
+      return {
+        title: 'Reassigned task',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value || 'Unassigned'}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-indigo-700 font-bold">{act.new_value}</span>
+          </span>
+        ),
+        icon: <UserCheck className="w-3.5 h-3.5 text-indigo-600" />,
+        tag: 'Reassigned',
+        tagColor: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+      };
+    }
+    if (action === 'status_changed') {
+      return {
+        title: 'Updated status',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-emerald-700 font-bold">{act.new_value}</span>
+          </span>
+        ),
+        icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
+        tag: 'Status',
+        tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      };
+    }
+    if (action === 'updated_due_date') {
+      return {
+        title: 'Updated due date',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value || 'None'}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-purple-700 font-bold">{act.new_value || 'Removed'}</span>
+          </span>
+        ),
+        icon: <Calendar className="w-3.5 h-3.5 text-purple-600" />,
+        tag: 'Due Date',
+        tagColor: 'bg-purple-50 text-purple-700 border-purple-200'
+      };
+    }
+    if (action === 'updated_start_date') {
+      return {
+        title: 'Updated start date',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value || 'None'}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-purple-700 font-bold">{act.new_value || 'Removed'}</span>
+          </span>
+        ),
+        icon: <Calendar className="w-3.5 h-3.5 text-purple-600" />,
+        tag: 'Start Date',
+        tagColor: 'bg-purple-50 text-purple-700 border-purple-200'
+      };
+    }
+    if (action === 'updated_priority') {
+      return {
+        title: 'Changed priority',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-amber-700 font-bold">{act.new_value}</span>
+          </span>
+        ),
+        icon: <AlertCircle className="w-3.5 h-3.5 text-amber-600" />,
+        tag: 'Priority',
+        tagColor: 'bg-amber-50 text-amber-700 border-amber-200'
+      };
+    }
+    if (action === 'updated_title') {
+      return {
+        title: 'Renamed task',
+        description: <span className="font-semibold text-slate-800">"{act.new_value}"</span>,
+        icon: <Edit3 className="w-3.5 h-3.5 text-slate-600" />,
+        tag: 'Title',
+        tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
+      };
+    }
+    if (action === 'updated_description') {
+      return {
+        title: 'Updated description',
+        description: null,
+        icon: <Edit3 className="w-3.5 h-3.5 text-slate-600" />,
+        tag: 'Details',
+        tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
+      };
+    }
+    if (action === 'updated_progress') {
+      return {
+        title: 'Updated progress',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value}%</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-cyan-700 font-bold">{act.new_value}%</span>
+          </span>
+        ),
+        icon: <Activity className="w-3.5 h-3.5 text-cyan-600" />,
+        tag: 'Progress',
+        tagColor: 'bg-cyan-50 text-cyan-700 border-cyan-200'
+      };
+    }
+    if (action === 'updated_estimated_hours' || action === 'updated_actual_hours') {
+      return {
+        title: action === 'updated_estimated_hours' ? 'Estimated hours' : 'Logged hours',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value}h</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-slate-800 font-bold">{act.new_value}h</span>
+          </span>
+        ),
+        icon: <Clock className="w-3.5 h-3.5 text-slate-600" />,
+        tag: 'Hours',
+        tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
+      };
+    }
+    if (action === 'deleted') {
+      return {
+        title: 'Moved to trash',
+        description: null,
+        icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
+        tag: 'Deleted',
+        tagColor: 'bg-rose-50 text-rose-700 border-rose-200'
+      };
+    }
+    if (action === 'restored') {
+      return {
+        title: 'Restored from trash',
+        description: null,
+        icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
+        tag: 'Restored',
+        tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      };
+    }
+
+    return {
+      title: action.replace(/_/g, ' '),
+      description: act.new_value ? (
+        <span>{act.old_value ? `${act.old_value} → ` : ''}{act.new_value}</span>
+      ) : null,
+      icon: <History className="w-3.5 h-3.5 text-slate-600" />,
+      tag: 'Update',
+      tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
+    };
   };
 
   return (
@@ -194,50 +361,33 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1.5">
               <User className="w-4 h-4 text-blue-600" />
-              <label className="text-xs font-bold text-slate-900">Assigned Member</label>
+              <label className="text-xs font-bold text-slate-900">Assigned Team Member</label>
             </div>
 
-            {isAdmin ? (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center space-x-1">
-                <ShieldCheck className="w-3 h-3" />
-                <span>Admin Reassignment Allowed</span>
-              </span>
-            ) : (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center space-x-1">
-                <Lock className="w-3 h-3" />
-                <span>Reassignment Locked (Member)</span>
-              </span>
-            )}
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center space-x-1">
+              <ShieldCheck className="w-3 h-3 text-blue-600" />
+              <span>Reassignments Logged & Audited</span>
+            </span>
           </div>
 
-          {isAdmin ? (
-            <select
-              value={assignedToId}
-              onChange={e => setAssignedToId(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-            >
-              {users.map(u => (
+          <select
+            value={assignedToId}
+            onChange={e => setAssignedToId(Number(e.target.value))}
+            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+          >
+            {users
+              .filter(u => u.username.toLowerCase() !== 'shootside' && u.id !== 1)
+              .map(u => (
                 <option key={u.id} value={u.id}>
-                  {u.name} ({u.role}) - {u.email}
+                  {u.name} (@{u.username}) — {u.email}
                 </option>
               ))}
-            </select>
-          ) : (
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200">
-              <div className="flex items-center space-x-2.5">
-                <img
-                  src={task.assigned_to?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'}
-                  alt={task.assigned_to?.name}
-                  className="w-6 h-6 rounded-full object-cover border border-slate-200"
-                />
-                <span className="text-xs font-bold text-slate-900">
-                  {task.assigned_to?.name || 'Unassigned'}
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-500 italic">
-                Only Admin can reassign existing tasks
-              </span>
-            </div>
+          </select>
+
+          {assignedToId !== (task.assigned_to_id || task.assigned_to?.id) && (
+            <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg font-medium">
+              ⚠️ Reassigning from <strong>{task.assigned_to?.name || 'Previous'}</strong> to <strong>{users.find(u => u.id === assignedToId)?.name || 'Selected'}</strong>. This change will be permanently logged in the audit trail.
+            </p>
           )}
         </div>
 
@@ -372,7 +522,7 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
-              <span>Audit Trail</span>
+              <span>Audit Trail ({taskActivities.length})</span>
             </button>
           </div>
 
@@ -389,11 +539,17 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                     <div key={c.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <img
-                            src={c.user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'}
-                            alt={c.user?.name}
-                            className="w-5 h-5 rounded-full object-cover border border-slate-200"
-                          />
+                          {c.user?.avatar ? (
+                            <img
+                              src={c.user.avatar}
+                              alt={c.user?.name}
+                              className="w-5 h-5 rounded-full object-cover border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center uppercase">
+                              {c.user?.name ? c.user.name.charAt(0) : 'U'}
+                            </div>
+                          )}
                           <span className="font-bold text-slate-900">{c.user?.name || 'User'}</span>
                           <span className="text-[10px] text-slate-500 font-bold">({c.user?.role || 'MEMBER'})</span>
                         </div>
@@ -455,26 +611,72 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
             </div>
           )}
 
-          {/* Audit */}
+          {/* Audit Trail - Small line layout with full details */}
           {activeTab === 'audit' && (
-            <div className="space-y-2.5 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {taskActivities.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-4 font-medium">No audit entries yet.</p>
+                <div className="p-6 text-center text-xs text-slate-400 font-medium bg-slate-50 rounded-xl border border-slate-200">
+                  <Clock className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                  No audit trail recorded yet for this task.
+                </div>
               ) : (
-                taskActivities.map(act => (
-                  <div key={act.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-slate-500">
-                      <span className="font-bold text-slate-900">{act.user_name}</span>
-                      <span className="font-mono">{act.created_at}</span>
+                taskActivities.map(act => {
+                  const details = getActivityDetails(act);
+                  return (
+                    <div
+                      key={act.id}
+                      className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200 hover:bg-white transition-colors flex items-start space-x-3 text-xs"
+                    >
+                      {/* Avatar / Icon */}
+                      <div className="mt-0.5 relative shrink-0">
+                        {act.user_avatar ? (
+                          <img
+                            src={act.user_avatar}
+                            alt={act.user_name}
+                            className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-extrabold flex items-center justify-center text-[10px] uppercase">
+                            {act.user_name ? act.user_name.substring(0, 2) : 'SY'}
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-white border border-slate-200 shadow-2xs">
+                          {details.icon}
+                        </div>
+                      </div>
+
+                      {/* Content line */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center space-x-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900">{act.user_name}</span>
+                            {act.user_role && (
+                              <span className="text-[9px] px-1.5 py-0.2 font-bold uppercase rounded bg-slate-200 text-slate-700">
+                                {act.user_role}
+                              </span>
+                            )}
+                            <span className="text-slate-400 text-[11px]">•</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded border font-semibold ${details.tagColor}`}>
+                              {details.tag}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                            {act.created_at}
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] text-slate-700 flex items-center space-x-1 flex-wrap">
+                          <span className="font-medium text-slate-600">{details.title}:</span>
+                          {details.description ? (
+                            <span>{details.description}</span>
+                          ) : (
+                            <span className="text-slate-500 italic">Updated</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-blue-700 font-bold">{act.action}</p>
-                    {act.old_value && act.new_value && (
-                      <p className="text-[11px] text-slate-700 font-mono">
-                        {act.old_value} → {act.new_value}
-                      </p>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}

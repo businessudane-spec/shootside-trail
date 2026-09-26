@@ -20,10 +20,22 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
   const { projects, users, createTask } = usePMData();
   const { user } = usePMAuth();
 
-  const [projectId, setProjectId] = useState<number>(defaultProjectId || (projects[0]?.id ?? 101));
+  const defaultProj = defaultProjectId || (projects.length > 0 ? projects[0].id : 1);
+  const [projectId, setProjectId] = useState<number>(defaultProj);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [assignedToId, setAssignedToId] = useState<number>(user?.id || 1);
+
+  const assignableMembers = users.filter(
+    u => u.username.toLowerCase() !== 'shootside' && u.id !== 1
+  );
+
+  const [assignedToId, setAssignedToId] = useState<number>(() => {
+    if (user && user.username.toLowerCase() !== 'shootside') {
+      return user.id;
+    }
+    return assignableMembers[0]?.id ?? 2;
+  });
+
   const [priority, setPriority] = useState<PriorityLevel>('Medium');
   const [status, setStatus] = useState<TaskStatus>('To Do');
   const [startDate, setStartDate] = useState('');
@@ -41,19 +53,18 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
       setError('Task title is required');
       return;
     }
-    if (!projectId) {
-      setError('Please select a project');
-      return;
-    }
 
     setIsSubmitting(true);
     setError(null);
 
+    const activeProjectId = Number(projectId) || (projects.length > 0 ? projects[0].id : 1);
+    const targetAssigneeId = Number(assignedToId) || (assignableMembers[0]?.id ?? 2);
+
     const res = await createTask({
-      project_id: Number(projectId),
+      project_id: activeProjectId,
       title: title.trim(),
       description,
-      assigned_to_id: Number(assignedToId),
+      assigned_to_id: targetAssigneeId,
       priority,
       status,
       start_date: startDate || null,
@@ -82,9 +93,9 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
               <Plus className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">Create New Task</h2>
+              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">Create & Assign Task</h2>
               <p className="text-[11px] text-slate-500 font-medium">
-                You can assign this task to any team member on creation
+                Assign deliverables directly to any team member
               </p>
             </div>
           </div>
@@ -105,56 +116,34 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
             </div>
           )}
 
-          {/* Project Selector */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Project *</label>
-            <select
-              value={projectId}
-              onChange={e => setProjectId(Number(e.target.value))}
-              required
-              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-            >
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.project_name} ({p.client_name || 'Internal'})
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Task Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700">Task Title *</label>
             <input
               type="text"
               required
-              placeholder="e.g. Implement Responsive Navbar & Mobile Drawer"
+              placeholder="e.g. Design Homepage Banner / Video Editing"
               value={title}
               onChange={e => setTitle(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
             />
           </div>
 
-          {/* Initial Assignee */}
+          {/* Assign to Member */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700">Assign To Team Member</label>
-              <span className="text-[10px] text-blue-700 font-bold">Available on creation</span>
-            </div>
+            <label className="text-xs font-bold text-slate-700">Assign To Team Member *</label>
             <select
               value={assignedToId}
               onChange={e => setAssignedToId(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              required
+              className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             >
-              {users.map(u => (
+              {assignableMembers.map(u => (
                 <option key={u.id} value={u.id}>
-                  {u.name} ({u.role}) - {u.email}
+                  {u.name} (@{u.username}) — {u.email}
                 </option>
               ))}
             </select>
-            <p className="text-[10px] text-slate-400">
-              Note: Once saved, Members cannot change the assignee (Admin only).
-            </p>
           </div>
 
           {/* Description */}

@@ -12,43 +12,43 @@ import {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_SHOOTSIDE_WP_API_URL ||
-  'https://shootside.in/wp-json/shootside-pm/v1';
+  '/api/wp/wp-json/shootside-pm/v1';
 
-// Initial dataset for instant preview if remote server is unreachable
+// Fallback dataset aligned with real WordPress database accounts
 const MOCK_USERS: PMUser[] = [
   {
     id: 1,
-    name: 'Admin ShootSide',
-    username: 'admin',
-    email: 'admin@shootside.in',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    name: 'shootside',
+    username: 'shootside',
+    email: 'business.udane@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     role: 'ADMIN',
     status: 'active'
   },
   {
     id: 2,
-    name: 'Sujith K.',
+    name: 'sujith',
     username: 'sujith',
     email: 'sujith@shootside.in',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
     role: 'MEMBER',
     status: 'active'
   },
   {
     id: 3,
-    name: 'Arun V.',
-    username: 'arun',
-    email: 'arun@shootside.in',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    name: 'Anirudh',
+    username: 'anirudh',
+    email: 'anirudh.shootside@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
     role: 'MEMBER',
     status: 'active'
   },
   {
     id: 4,
-    name: 'Rahul Sharma',
-    username: 'rahul',
-    email: 'rahul@shootside.in',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+    name: 'Karthik',
+    username: 'karthik',
+    email: 'team.shootside@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150',
     role: 'MEMBER',
     status: 'active'
   }
@@ -357,17 +357,31 @@ class PMClient {
         headers
       });
 
+      const json = await response.json().catch(() => null);
+
       if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.message || `HTTP ${response.status}: ${response.statusText}`);
+        this.isLiveActive = true;
+        return {
+          success: false,
+          data: undefined,
+          message: (json && json.message) || `Error ${response.status}: ${response.statusText}`
+        };
       }
 
-      const json = await response.json();
       this.isLiveActive = true;
-      return json;
+      return json || { success: true };
     } catch (err: any) {
       this.isLiveActive = false;
-      console.warn(`[ShootSide PM] Real API fetch to ${endpoint} (${err.message}). Using local state.`);
+      console.warn(`[ShootSide PM] Real API fetch to ${endpoint} (${err.message}).`);
+      
+      // Never bypass authentication on network or server errors
+      if (endpoint.startsWith('/auth')) {
+        return {
+          success: false,
+          message: 'Unable to connect to WordPress server. Please check your connection and try again.'
+        };
+      }
+
       return this.handleMockFallback<T>(endpoint, options);
     }
   }
@@ -376,19 +390,14 @@ class PMClient {
     const method = options.method || 'GET';
 
     if (endpoint === '/auth/login' && method === 'POST') {
-      const body = JSON.parse((options.body as string) || '{}');
-      const user = MOCK_USERS.find(u => u.username === body.username) || MOCK_USERS[0];
-      const mockToken = 'mock_jwt_' + user.id + '_' + Date.now();
-      this.setToken(mockToken);
       return {
-        success: true,
-        data: { token: mockToken, user } as any,
-        message: 'Logged in successfully (Dev Mode)'
+        success: false,
+        message: 'Invalid credentials. Access denied.'
       };
     }
 
     if (endpoint === '/auth/me') {
-      return { success: true, data: MOCK_USERS[0] as any };
+      return { success: false, message: 'Session expired.' };
     }
 
     if (endpoint === '/users') {
@@ -465,6 +474,13 @@ class PMClient {
     this.setToken(null);
   }
 
+  public async updateProfile(data: { name?: string; email?: string; password?: string; avatar?: string }) {
+    return this.request<PMUser>('/auth/profile', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
   public async getUsers() {
     return this.request<PMUser[]>('/users');
   }
@@ -506,16 +522,24 @@ class PMClient {
   }
 
   public async createTask(data: Partial<PMTask>) {
+    const payload: any = { ...data };
+    if (data.assigned_to_id !== undefined && payload.assigned_to === undefined) {
+      payload.assigned_to = Number(data.assigned_to_id);
+    }
     return this.request<PMTask>('/tasks', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(payload)
     });
   }
 
   public async updateTask(id: number, data: Partial<PMTask>) {
+    const payload: any = { ...data };
+    if (data.assigned_to_id !== undefined && payload.assigned_to === undefined) {
+      payload.assigned_to = Number(data.assigned_to_id);
+    }
     return this.request<PMTask>(`/tasks/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(payload)
     });
   }
 

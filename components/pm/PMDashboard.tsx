@@ -59,11 +59,11 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
               <span>PROJECT TRACK DASHBOARD</span>
               <span>•</span>
               <span className="bg-white/20 text-white px-2.5 py-0.5 rounded-full backdrop-blur-xs font-bold text-[10px]">
-                {user?.role} ACCESS
+                {user ? `${user.role} ACCESS` : 'GUEST VIEW'}
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-              Welcome back, {user?.name}
+              Welcome back, {user ? user.name : 'to Project Track'}
             </h1>
             <p className="text-xs md:text-sm text-blue-100 mt-1.5 max-w-xl leading-relaxed">
               Track active deliverables, manage team assignments, and synchronize project progress in real time.

@@ -42,8 +42,8 @@ export const PMLoginModal: React.FC<PMLoginModalProps> = ({ isOpen, onClose }) =
               <KeyRound className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">WordPress Authentication</h2>
-              <p className="text-[11px] text-slate-500 font-medium">shootside.in REST API Login</p>
+              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">ShootSide Account Sign In</h2>
+              <p className="text-[11px] text-slate-500 font-medium">ShootSide Project Management System</p>
             </div>
           </div>
 
@@ -62,16 +62,18 @@ export const PMLoginModal: React.FC<PMLoginModalProps> = ({ isOpen, onClose }) =
             </div>
           )}
 
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-slate-700">
-            Current Authenticated User: <strong className="text-blue-700">{user?.name}</strong> ({user?.role})
-          </div>
+          {user && (
+            <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-slate-700">
+              Current Active Account: <strong className="text-blue-700">{user?.name}</strong> ({user?.role})
+            </div>
+          )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">WordPress Username / Email</label>
+            <label className="text-xs font-bold text-slate-700">Username or Email</label>
             <input
               type="text"
               required
-              placeholder="e.g. admin or team_member"
+              placeholder="Username or Email"
               value={username}
               onChange={e => setUsername(e.target.value)}
               className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
@@ -103,7 +105,7 @@ export const PMLoginModal: React.FC<PMLoginModalProps> = ({ isOpen, onClose }) =
               disabled={isLoading}
               className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 cursor-pointer transition-all"
             >
-              {isLoading ? 'Authenticating...' : 'Sign In via WordPress'}
+              {isLoading ? 'Authenticating...' : 'Sign In'}
             </button>
           </div>
         </form>

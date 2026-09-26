@@ -122,9 +122,25 @@ export const PMProjectsList: React.FC<PMProjectsListProps> = ({
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredProjects.length === 0 ? (
-          <div className="col-span-full p-12 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-            <FolderKanban className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-            No projects found matching the criteria.
+          <div className="col-span-full p-12 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
+              <FolderKanban className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">No Projects Found</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Get started by creating your first client deliverable or internal campaign project.
+              </p>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={openCreateProject}
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create New Project</span>
+              </button>
+            )}
           </div>
         ) : (
           filteredProjects.map(project => (
