@@ -39,7 +39,7 @@ export async function OPTIONS() {
 function doHttpRequest(
   options: http.RequestOptions,
   bodyData: Buffer | null
-): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: string }> {
+): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: Buffer }> {
   return new Promise((resolve, reject) => {
     const req = http.request(options, (res) => {
       const chunks: Buffer[] = [];
@@ -49,7 +49,7 @@ function doHttpRequest(
         resolve({
           statusCode: res.statusCode || 200,
           headers: res.headers,
-          body: buffer.toString('utf-8')
+          body: buffer
         });
       });
     });
@@ -69,7 +69,7 @@ function doHttpRequest(
 function doHttpsRequest(
   options: https.RequestOptions,
   bodyData: Buffer | null
-): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: string }> {
+): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: Buffer }> {
   return new Promise((resolve, reject) => {
     const req = https.request(
       { ...options, rejectUnauthorized: false },
@@ -81,7 +81,7 @@ function doHttpsRequest(
           resolve({
             statusCode: res.statusCode || 200,
             headers: res.headers,
-            body: buffer.toString('utf-8')
+            body: buffer
           });
         });
       }
@@ -116,7 +116,7 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
 
     const headers: Record<string, string> = {
       Host: WP_DOMAIN,
-      Accept: 'application/json'
+      Accept: request.headers.get('accept') || '*/*'
     };
 
     const authHeader = request.headers.get('authorization');
@@ -154,7 +154,7 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
         bodyData
       );
 
-      return new NextResponse(res.body, {
+      return new NextResponse(new Uint8Array(res.body), {
         status: res.statusCode,
         headers: {
           'Content-Type': (res.headers['content-type'] as string) || 'application/json'
@@ -180,7 +180,7 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
           bodyData
         );
 
-        return new NextResponse(httpsRes.body, {
+        return new NextResponse(new Uint8Array(httpsRes.body), {
           status: httpsRes.statusCode,
           headers: {
             'Content-Type': (httpsRes.headers['content-type'] as string) || 'application/json'

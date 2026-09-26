@@ -538,13 +538,14 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   };
 
   const getAttachmentUrl = (att: PMAttachment) => {
-    if (att.stream_url) return att.stream_url;
-    if (att.file_url && att.file_url.includes('/attachments/') && att.file_url.includes('/file')) return att.file_url;
     if (att.id) {
-      const apiBase = pmApi.getApiBaseUrl().replace('/shootside-pm/v1', '');
-      return `${apiBase}/wp-json/shootside-pm/v1/attachments/${att.id}/file`;
+      return `https://shootside-in-gpnm.bom1.mystaging.site/index.php?rest_route=/shootside-pm/v1/attachments/${att.id}/file`;
     }
-    return att.file_url;
+    let url = att.stream_url || att.file_url || '';
+    if (url.includes('wp-content/uploads/')) {
+      return url.replace(/^https?:\/\/[^\/]+/, 'https://shootside-in-gpnm.bom1.mystaging.site');
+    }
+    return url;
   };
 
   const getActivityDetails = (act: PMActivityLog) => {
