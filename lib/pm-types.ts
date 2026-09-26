@@ -127,6 +127,8 @@ export interface PMAttachment {
   user: PMUser | null;
   user_id: number;
   file_url: string;
+  stream_url?: string;
+  direct_url?: string;
   file_name: string;
   file_type: string;
   file_size: number;

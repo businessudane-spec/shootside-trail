@@ -537,6 +537,16 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
     );
   };
 
+  const getAttachmentUrl = (att: PMAttachment) => {
+    if (att.stream_url) return att.stream_url;
+    if (att.file_url && att.file_url.includes('/attachments/') && att.file_url.includes('/file')) return att.file_url;
+    if (att.id) {
+      const apiBase = pmApi.getApiBaseUrl().replace('/shootside-pm/v1', '');
+      return `${apiBase}/wp-json/shootside-pm/v1/attachments/${att.id}/file`;
+    }
+    return att.file_url;
+  };
+
   const getActivityDetails = (act: PMActivityLog) => {
     const action = act.action;
 
@@ -1564,40 +1574,47 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                   attachments.map(att => {
                     const isImg = isImageAttachment(att);
                     const canDelete = isAdmin || (user && user.id === att.user_id);
+                    const fileUrl = getAttachmentUrl(att);
 
                     return (
                       <div
                         key={att.id}
-                        className="p-3 rounded-xl bg-slate-50/90 border border-slate-200 hover:bg-white hover:border-slate-300 transition-all flex items-center justify-between gap-3 text-xs"
+                        className="p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all flex items-center justify-between gap-3 text-xs"
                       >
                         {/* File Thumbnail & Name */}
                         <div className="flex items-center space-x-3 min-w-0">
                           {isImg ? (
                             <button
                               type="button"
-                              onClick={() => setPreviewImageUrl(att.file_url)}
-                              className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 group cursor-pointer"
+                              onClick={() => setPreviewImageUrl(fileUrl)}
+                              className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 group cursor-pointer"
                             >
                               <img
-                                src={att.file_url}
+                                src={fileUrl}
                                 alt={att.file_name}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                onError={(e) => {
+                                  // Fallback to direct_url or generic icon if stream fails
+                                  if (att.direct_url && e.currentTarget.src !== att.direct_url) {
+                                    e.currentTarget.src = att.direct_url;
+                                  }
+                                }}
                               />
                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                 <Eye className="w-3.5 h-3.5 text-white" />
                               </div>
                             </button>
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 font-bold">
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 font-bold">
                               <FileText className="w-5 h-5" />
                             </div>
                           )}
 
                           <div className="min-w-0">
-                            <p className="font-bold text-slate-900 truncate" title={att.file_name}>
+                            <p className="font-bold text-slate-900 dark:text-slate-100 truncate" title={att.file_name}>
                               {att.file_name}
                             </p>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                               {formatFileSize(att.file_size)} • {att.user?.name || 'Member'} • <span className="font-mono">{att.created_at.substring(0, 10)}</span>
                             </p>
                           </div>
@@ -1608,8 +1625,8 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                           {isImg && (
                             <button
                               type="button"
-                              onClick={() => setPreviewImageUrl(att.file_url)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              onClick={() => setPreviewImageUrl(fileUrl)}
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
                               title="Preview"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -1617,11 +1634,11 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                           )}
 
                           <a
-                            href={att.file_url}
+                            href={fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             download={att.file_name}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
                             title="Open / Download"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -1631,7 +1648,7 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                             <button
                               type="button"
                               onClick={() => handleDeleteAttachment(att.id, att.file_name)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
                               title="Delete file"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
