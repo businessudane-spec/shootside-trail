@@ -3,11 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 
 export default function Header() {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+
+  if (pathname?.startsWith("/project-management")) {
+    return null;
+  }
 
   const toggleSubmenu = (menu: string) => {
     if (activeSubmenu === menu) {

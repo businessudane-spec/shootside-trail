@@ -1,0 +1,360 @@
+'use client';
+
+import React from 'react';
+import {
+  LayoutDashboard,
+  FolderKanban,
+  ListTodo,
+  Kanban,
+  Calendar,
+  Users,
+  Bell,
+  BarChart3,
+  ShieldAlert,
+  Trash2,
+  PlusCircle,
+  Sparkles,
+  ShieldCheck,
+  UserCheck,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  CheckCircle2
+} from 'lucide-react';
+import { usePMAuth } from '@/lib/pm-auth-context';
+import { usePMData } from '@/lib/pm-data-context';
+
+export type PMView =
+  | 'dashboard'
+  | 'projects'
+  | 'tasks_list'
+  | 'tasks_my'
+  | 'tasks_kanban'
+  | 'calendar'
+  | 'team'
+  | 'notifications'
+  | 'reports'
+  | 'admin_activity'
+  | 'admin_trash';
+
+interface PMSidebarProps {
+  currentView: PMView;
+  setCurrentView: (v: PMView) => void;
+  openCreateTask: () => void;
+  openCreateProject: () => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
+  isMobileOpen: boolean;
+  setIsMobileOpen: (open: boolean) => void;
+}
+
+export const PMSidebar: React.FC<PMSidebarProps> = ({
+  currentView,
+  setCurrentView,
+  openCreateTask,
+  openCreateProject,
+  isCollapsed,
+  setIsCollapsed,
+  isMobileOpen,
+  setIsMobileOpen
+}) => {
+  const { user, isAdmin, isMember, switchUserRole } = usePMAuth();
+  const { unreadNotificationsCount } = usePMData();
+
+  const handleNav = (v: PMView) => {
+    setCurrentView(v);
+    setIsMobileOpen(false);
+  };
+
+  return (
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 bg-white border-r border-slate-200 flex flex-col justify-between transition-all duration-300 shadow-sm ${
+        isCollapsed ? 'w-20' : 'w-64'
+      } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+    >
+      {/* Top Brand Header */}
+      <div>
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center space-x-3 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+              <FolderKanban className="w-5 h-5" />
+            </div>
+            {!isCollapsed && (
+              <div className="truncate">
+                <span className="font-bold text-slate-900 text-base tracking-tight block">
+                  Project Track
+                </span>
+                <span className="text-[10px] text-blue-600 font-semibold tracking-wider uppercase">
+                  ShootSide Workspace
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Collapse Hamburger / Toggle button on Desktop */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Quick Action Button */}
+        <div className="p-3">
+          <button
+            onClick={() => {
+              openCreateTask();
+              setIsMobileOpen(false);
+            }}
+            className={`w-full flex items-center justify-center space-x-2 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all cursor-pointer ${
+              isCollapsed ? 'px-0' : ''
+            }`}
+            title="Create Task"
+          >
+            <PlusCircle className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span>Create Task</span>}
+          </button>
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="px-3 py-1 space-y-5 overflow-y-auto max-h-[calc(100vh-280px)]">
+          {/* Main Views */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <span className="px-3 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                Overview
+              </span>
+            )}
+            <button
+              onClick={() => handleNav('dashboard')}
+              title="Dashboard"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'dashboard'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Dashboard</span>}
+            </button>
+
+            <button
+              onClick={() => handleNav('projects')}
+              title="Projects"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'projects'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <FolderKanban className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Projects</span>}
+            </button>
+          </div>
+
+          {/* Tasks Section */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <span className="px-3 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                Task Management
+              </span>
+            )}
+            <button
+              onClick={() => handleNav('tasks_list')}
+              title="All Tasks"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'tasks_list'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <ListTodo className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>All Tasks</span>}
+            </button>
+
+            <button
+              onClick={() => handleNav('tasks_my')}
+              title="My Tasks"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'tasks_my'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <UserCheck className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>My Tasks</span>}
+            </button>
+
+            <button
+              onClick={() => handleNav('tasks_kanban')}
+              title="Kanban Board"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'tasks_kanban'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Kanban className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Kanban Board</span>}
+            </button>
+
+            <button
+              onClick={() => handleNav('calendar')}
+              title="Deadlines Calendar"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'calendar'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Calendar className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Deadlines Calendar</span>}
+            </button>
+          </div>
+
+          {/* Team & Analytics */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <span className="px-3 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                Collaboration
+              </span>
+            )}
+            <button
+              onClick={() => handleNav('team')}
+              title="Team Workload"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'team'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Users className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Team Workload</span>}
+            </button>
+
+            <button
+              onClick={() => handleNav('notifications')}
+              title="Notifications"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'justify-between px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'notifications'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <Bell className="w-4 h-4 shrink-0" />
+                {!isCollapsed && <span>Notifications</span>}
+              </div>
+              {!isCollapsed && unreadNotificationsCount > 0 && (
+                <span className="bg-blue-600 text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleNav('reports')}
+              title="Reports & Analytics"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'reports'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Reports</span>}
+            </button>
+          </div>
+
+          {/* Admin Zone */}
+          {isAdmin && (
+            <div className="space-y-1 pt-2 border-t border-slate-200">
+              {!isCollapsed && (
+                <span className="px-3 text-[10px] font-bold text-rose-600 uppercase tracking-wider flex items-center space-x-1">
+                  <ShieldCheck className="w-3 h-3 inline" />
+                  <span>Admin Zone</span>
+                </span>
+              )}
+
+              <button
+                onClick={() => handleNav('admin_activity')}
+                title="Activity & Audit Log"
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                  currentView === 'admin_activity'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
+                {!isCollapsed && <span>Audit Log</span>}
+              </button>
+
+              <button
+                onClick={() => handleNav('admin_trash')}
+                title="Deleted Items"
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                  currentView === 'admin_trash'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Trash2 className="w-4 h-4 shrink-0 text-rose-500" />
+                {!isCollapsed && <span>Deleted Items</span>}
+              </button>
+            </div>
+          )}
+        </nav>
+      </div>
+
+      {/* Bottom Profile & Role Switcher */}
+      <div className="p-3 border-t border-slate-200 bg-slate-50/80 space-y-2">
+        {!isCollapsed && (
+          <div className="p-2 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <div className="flex items-center justify-between text-[11px] mb-1 text-slate-500 font-medium">
+              <span>Role Simulator:</span>
+              <span className="font-bold text-blue-600">{user?.role}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                onClick={() => switchUserRole('ADMIN')}
+                className={`text-[10px] py-1 rounded-md font-semibold transition-all ${
+                  isAdmin
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Admin
+              </button>
+              <button
+                onClick={() => switchUserRole('MEMBER')}
+                className={`text-[10px] py-1 rounded-md font-semibold transition-all ${
+                  isMember
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Member
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center space-x-2.5 px-1 py-1">
+          <img
+            src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+            alt="User avatar"
+            className="w-8 h-8 rounded-full border border-slate-200 object-cover shrink-0"
+          />
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-slate-900 truncate">{user?.name}</p>
+              <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+};
