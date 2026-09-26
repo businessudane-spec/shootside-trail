@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   TrendingUp,
   UserCheck,
+  UserX,
   Calendar,
   Sparkles,
   ChevronRight,
@@ -45,6 +46,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   const reviewTasks = statistics?.tasks.review ?? tasks.filter(t => t.status === 'Review').length;
   const completedTasks = statistics?.tasks.completed ?? tasks.filter(t => t.status === 'Completed').length;
   const overdueTasks = statistics?.tasks.overdue ?? tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'Completed').length;
+  const unassignedTasks = tasks.filter(t => (!t.assigned_to_id || t.assigned_to_id === 0) && t.status !== 'Completed').length;
 
   const myTasks = tasks.filter(t => t.assigned_to_id === user?.id && t.status !== 'Completed');
 
@@ -92,23 +94,23 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Active Projects */}
+        {/* Unassigned Tasks */}
         <div
-          onClick={() => onNavigateView('projects')}
-          className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group shadow-xs"
+          onClick={() => onNavigateView('tasks_list')}
+          className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
-            <span className="text-xs font-semibold">Active Projects</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
-              <FolderKanban className="w-4 h-4" />
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
+            <span className="text-xs font-semibold">Unassigned Tasks</span>
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+              <UserX className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900">{activeProjects}</span>
-            <span className="text-xs text-slate-400">/ {totalProjects} total</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{unassignedTasks}</span>
+            <span className="text-xs text-slate-400">/ {totalTasks} total</span>
           </div>
-          <p className="text-[11px] text-blue-600 mt-2 flex items-center space-x-1 font-semibold">
-            <span>{completedProjects} completed projects</span>
+          <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 flex items-center space-x-1 font-semibold">
+            <span>{unassignedTasks > 0 ? `${unassignedTasks} need assignment` : 'All active tasks assigned'}</span>
             <ArrowUpRight className="w-3 h-3" />
           </p>
         </div>
@@ -116,19 +118,19 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Tasks in Progress */}
         <div
           onClick={() => onNavigateView('tasks_list')}
-          className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer group shadow-xs"
+          className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
             <span className="text-xs font-semibold">In Progress Tasks</span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 group-hover:scale-110 transition-transform">
+            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900">{inProgressTasks}</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{inProgressTasks}</span>
             <span className="text-xs text-slate-400">/ {totalTasks} total</span>
           </div>
-          <p className="text-[11px] text-indigo-600 mt-2 flex items-center space-x-1 font-semibold">
+          <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-2 flex items-center space-x-1 font-semibold">
             <span>{reviewTasks} in review</span>
             <ArrowUpRight className="w-3 h-3" />
           </p>
@@ -137,21 +139,21 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Completed Tasks */}
         <div
           onClick={() => onNavigateView('tasks_list')}
-          className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer group shadow-xs"
+          className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
             <span className="text-xs font-semibold">Completed Tasks</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
+            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900">{completedTasks}</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{completedTasks}</span>
             <span className="text-xs text-slate-400 font-semibold">
               ({totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%)
             </span>
           </div>
-          <p className="text-[11px] text-emerald-600 mt-2 flex items-center space-x-1 font-semibold">
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 flex items-center space-x-1 font-semibold">
             <span>High completion velocity</span>
             <TrendingUp className="w-3 h-3" />
           </p>
@@ -160,19 +162,19 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Overdue / Urgent Alert */}
         <div
           onClick={() => onNavigateView('tasks_list')}
-          className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-rose-400 hover:shadow-md transition-all cursor-pointer group shadow-xs"
+          className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-500 mb-3">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
             <span className="text-xs font-semibold">Overdue / Urgent</span>
-            <div className="p-2 rounded-xl bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform">
+            <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
               <Flame className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900">{overdueTasks}</span>
-            <span className="text-xs text-rose-600 font-bold">needs attention</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{overdueTasks}</span>
+            <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">needs attention</span>
           </div>
-          <p className="text-[11px] text-slate-500 mt-2 font-medium">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">
             My active tasks: {myTasks.length}
           </p>
         </div>
