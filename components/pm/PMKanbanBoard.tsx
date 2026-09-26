@@ -11,8 +11,10 @@ import {
   Columns,
   Rows,
   Layers,
-  Sparkles
+  Sparkles,
+  CheckSquare
 } from 'lucide-react';
+import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
 import { PMTask, TaskStatus } from '@/lib/pm-types';
 
@@ -326,6 +328,14 @@ function renderTaskCard(
           />
         </div>
       </div>
+
+      {/* Subtasks Count indicator if any */}
+      {(task.subtasks_count !== undefined && task.subtasks_count > 0) && (
+        <div className="flex items-center space-x-1 text-[10px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 w-fit">
+          <CheckSquare className="w-3 h-3 text-blue-600" />
+          <span>{task.subtasks_completed_count || 0}/{task.subtasks_count} Subtasks</span>
+        </div>
+      )}
 
       {/* Assignee & Due Date Footer */}
       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">

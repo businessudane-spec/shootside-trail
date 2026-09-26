@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PMAuthProvider } from '@/lib/pm-auth-context';
 import { PMDataProvider, usePMData } from '@/lib/pm-data-context';
+import { PMThemeProvider } from '@/lib/pm-theme-context';
 import { PMSidebar, PMView } from '@/components/pm/PMSidebar';
 import { PMHeader } from '@/components/pm/PMHeader';
 import { PMDashboard } from '@/components/pm/PMDashboard';
@@ -12,6 +13,7 @@ import { PMTasksList } from '@/components/pm/PMTasksList';
 import { PMKanbanBoard } from '@/components/pm/PMKanbanBoard';
 import { PMCalendarView } from '@/components/pm/PMCalendarView';
 import { PMTeamView } from '@/components/pm/PMTeamView';
+import { PMVaultView } from '@/components/pm/PMVaultView';
 import { PMReports } from '@/components/pm/PMReports';
 import { PMActivityLog } from '@/components/pm/PMActivityLog';
 import { PMDeletedItems } from '@/components/pm/PMDeletedItems';
@@ -73,7 +75,7 @@ function PMAppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       <div className="flex flex-1">
         {/* Collapsible Hamburger Sidebar */}
         <PMSidebar
@@ -171,6 +173,8 @@ function PMAppContent() {
 
                 {currentView === 'team' && <PMTeamView />}
 
+                {currentView === 'vault' && <PMVaultView />}
+
                 {currentView === 'reports' && <PMReports />}
 
                 {currentView === 'admin_activity' && <PMActivityLog />}
@@ -216,10 +220,12 @@ function PMAppContent() {
 
 export default function PMPage() {
   return (
-    <PMAuthProvider>
-      <PMDataProvider>
-        <PMAppContent />
-      </PMDataProvider>
-    </PMAuthProvider>
+    <PMThemeProvider>
+      <PMAuthProvider>
+        <PMDataProvider>
+          <PMAppContent />
+        </PMDataProvider>
+      </PMAuthProvider>
+    </PMThemeProvider>
   );
 }

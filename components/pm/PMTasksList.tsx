@@ -12,7 +12,8 @@ import {
   Trash2,
   MessageSquare,
   Paperclip,
-  Flame
+  Flame,
+  CheckSquare
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
@@ -48,7 +49,10 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const filteredTasks = tasks.filter(task => {
-    if (filterMyTasksOnly && task.assigned_to_id !== user?.id) return false;
+    const isAssignedToUser = 
+      task.assigned_to_id === user?.id || 
+      (task.subtasks && task.subtasks.some(st => (typeof st.assigned_to === 'object' ? st.assigned_to?.id : st.assigned_to) === user?.id || st.assigned_to_id === user?.id));
+    if (filterMyTasksOnly && !isAssignedToUser) return false;
     if (selectedProjectId && task.project_id !== selectedProjectId) return false;
     if (selectedStatus && task.status !== selectedStatus) return false;
     if (selectedPriority && task.priority !== selectedPriority) return false;
@@ -107,7 +111,7 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-medium">
             {filterMyTasksOnly
-              ? 'Tasks assigned directly to your WordPress user account.'
+              ? 'Tasks assigned directly to your account.'
               : 'Collaborative task board with live progress tracking and audit logs.'}
           </p>
         </div>
@@ -210,12 +214,25 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
                     >
                       {/* Title */}
                       <td className="py-3.5 px-4">
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                            {task.title}
-                          </p>
-                          <div className="flex items-center space-x-3 text-[10px] text-slate-400">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2 flex-wrap">
+                            <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                              {task.title}
+                            </p>
+                            {user && task.assigned_to_id !== user.id && task.subtasks && task.subtasks.some(st => (typeof st.assigned_to === 'object' ? st.assigned_to?.id : st.assigned_to) === user.id || st.assigned_to_id === user.id) && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                Subtask assigned to you
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-3 text-[10px] text-slate-400 flex-wrap gap-y-1">
                             <span className="font-mono">#{task.id}</span>
+                            {task.subtasks_count !== undefined && task.subtasks_count > 0 && (
+                              <span className="flex items-center space-x-1 text-slate-600 font-semibold bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                                <CheckSquare className="w-3 h-3 text-blue-600" />
+                                <span>{task.subtasks_completed_count || 0}/{task.subtasks_count} Subtasks</span>
+                              </span>
+                            )}
                             {task.comments_count > 0 && (
                               <span className="flex items-center space-x-1 text-slate-500 font-medium">
                                 <MessageSquare className="w-3 h-3" />

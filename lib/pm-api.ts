@@ -7,7 +7,9 @@ import {
   PMActivityLog,
   PMNotification,
   PMStatistics,
-  DeletedItemsResponse
+  DeletedItemsResponse,
+  PMVaultItem,
+  PMSubtask
 } from './pm-types';
 
 const API_BASE_URL =
@@ -562,6 +564,44 @@ class PMClient {
     return this.request<PMAttachment[]>(`/tasks/${taskId}/attachments`);
   }
 
+  public async uploadTaskAttachment(taskId: number, data: { file_name: string; file_type: string; file_base64: string }) {
+    return this.request<PMAttachment>(`/tasks/${taskId}/attachments`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async deleteTaskAttachment(taskId: number, attachmentId: number) {
+    return this.request<{ success: boolean }>(`/tasks/${taskId}/attachments/${attachmentId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // ================= SUBTASKS =================
+  public async getTaskSubtasks(taskId: number) {
+    return this.request<PMSubtask[]>(`/tasks/${taskId}/subtasks`);
+  }
+
+  public async createTaskSubtask(taskId: number, data: Partial<PMSubtask>) {
+    return this.request<PMSubtask>(`/tasks/${taskId}/subtasks`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async updateSubtask(subtaskId: number, data: Partial<PMSubtask>) {
+    return this.request<PMSubtask>(`/subtasks/${subtaskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async deleteSubtask(subtaskId: number) {
+    return this.request<{ success: boolean }>(`/subtasks/${subtaskId}`, {
+      method: 'DELETE'
+    });
+  }
+
   public async getTaskActivity(taskId: number) {
     return this.request<PMActivityLog[]>(`/tasks/${taskId}/activity`);
   }
@@ -593,6 +633,36 @@ class PMClient {
 
   public async getStatistics() {
     return this.request<PMStatistics>('/admin/statistics');
+  }
+
+  // ================= COMPANY VAULT / CREDENTIALS STORE =================
+  public async getVaultItems(params?: { category?: string; search?: string }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<PMVaultItem[]>(`/vault${query ? `?${query}` : ''}`);
+  }
+
+  public async getVaultItem(id: number) {
+    return this.request<PMVaultItem>(`/vault/${id}`);
+  }
+
+  public async createVaultItem(data: Partial<PMVaultItem>) {
+    return this.request<PMVaultItem>('/vault', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async updateVaultItem(id: number, data: Partial<PMVaultItem>) {
+    return this.request<PMVaultItem>(`/vault/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async deleteVaultItem(id: number) {
+    return this.request<{ success: boolean }>(`/vault/${id}`, {
+      method: 'DELETE'
+    });
   }
 }
 

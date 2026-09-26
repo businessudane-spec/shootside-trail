@@ -16,7 +16,7 @@ export const PMTeamView: React.FC = () => {
           <span>Team Members & Workload</span>
         </h1>
         <p className="text-xs text-slate-500 mt-1 font-medium">
-          Synchronized WordPress users and active task distribution across deliverables.
+          Team members and active task distribution across deliverables.
         </p>
       </div>
 

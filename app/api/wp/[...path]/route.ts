@@ -132,8 +132,8 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
     let bodyData: Buffer | null = null;
     if (method !== 'GET' && method !== 'HEAD') {
       try {
-        const rawText = await request.text();
-        bodyData = Buffer.from(rawText, 'utf-8');
+        const arrayBuffer = await request.arrayBuffer();
+        bodyData = Buffer.from(arrayBuffer);
         headers['Content-Length'] = String(bodyData.length);
       } catch {
         bodyData = null;

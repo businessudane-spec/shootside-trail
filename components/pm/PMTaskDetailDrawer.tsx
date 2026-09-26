@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Lock,
@@ -21,11 +21,21 @@ import {
   ArrowRight,
   UserCheck,
   Edit3,
-  History
+  History,
+  Camera,
+  Image as ImageIcon,
+  Download,
+  Loader2,
+  ExternalLink,
+  Eye,
+  Plus,
+  CheckSquare,
+  Square,
+  ListTodo
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
-import { PMTask, PMComment, PMAttachment, PMActivityLog, TaskStatus, PriorityLevel } from '@/lib/pm-types';
+import { PMTask, PMComment, PMAttachment, PMActivityLog, PMSubtask, TaskStatus, PriorityLevel, normalizeTaskStatus, normalizePriority } from '@/lib/pm-types';
 import { pmApi } from '@/lib/pm-api';
 
 interface PMTaskDetailDrawerProps {
@@ -35,12 +45,22 @@ interface PMTaskDetailDrawerProps {
 
 export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, onClose }) => {
   const { user, isAdmin } = usePMAuth();
-  const { users, updateTask, deleteTask, addComment } = usePMData();
+  const { 
+    users, 
+    updateTask, 
+    deleteTask, 
+    addComment, 
+    uploadAttachment, 
+    deleteAttachment,
+    createSubtask,
+    updateSubtask,
+    deleteSubtask
+  } = usePMData();
 
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
-  const [status, setStatus] = useState<TaskStatus>(task.status);
-  const [priority, setPriority] = useState<PriorityLevel>(task.priority);
+  const [status, setStatus] = useState<TaskStatus>(normalizeTaskStatus(task.status));
+  const [priority, setPriority] = useState<PriorityLevel>(normalizePriority(task.priority));
   const [assignedToId, setAssignedToId] = useState<number>(task.assigned_to_id);
   const [startDate, setStartDate] = useState(task.start_date || '');
   const [dueDate, setDueDate] = useState(task.due_date || '');
@@ -48,7 +68,8 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [actualHours, setActualHours] = useState(task.actual_hours);
   const [progress, setProgress] = useState(task.progress);
 
-  const [activeTab, setActiveTab] = useState<'comments' | 'attachments' | 'audit'>('comments');
+  const [activeTab, setActiveTab] = useState<'comments' | 'attachments' | 'subtasks' | 'audit'>('comments');
+  const [subtasks, setSubtasks] = useState<PMSubtask[]>([]);
   const [comments, setComments] = useState<PMComment[]>([]);
   const [attachments, setAttachments] = useState<PMAttachment[]>([]);
   const [taskActivities, setTaskActivities] = useState<PMActivityLog[]>([]);
@@ -56,6 +77,22 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Subtask Create Form States
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [newSubtaskAssigneeId, setNewSubtaskAssigneeId] = useState<number | null>(null);
+  const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
+  const [isCreatingSubtask, setIsCreatingSubtask] = useState(false);
+  const [showAddSubtaskForm, setShowAddSubtaskForm] = useState(false);
+
+  // File Upload States
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadStatusText, setUploadStatusText] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(task.title);
@@ -74,17 +111,83 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
 
   const loadTaskExtras = async (taskId: number) => {
     try {
-      const [cRes, aRes, actRes] = await Promise.all([
+      const [sRes, cRes, aRes, actRes] = await Promise.all([
+        pmApi.getTaskSubtasks(taskId),
         pmApi.getTaskComments(taskId),
         pmApi.getTaskAttachments(taskId),
         pmApi.getTaskActivity(taskId)
       ]);
 
+      if (sRes.success && sRes.data) setSubtasks(sRes.data);
       if (cRes.success && cRes.data) setComments(cRes.data);
       if (aRes.success && aRes.data) setAttachments(aRes.data);
       if (actRes.success && actRes.data) setTaskActivities(actRes.data as PMActivityLog[]);
     } catch (err) {
       console.error('Error loading task extras:', err);
+    }
+  };
+
+  const handleCreateSubtask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubtaskTitle.trim()) return;
+
+    setIsCreatingSubtask(true);
+    setErrorMessage(null);
+
+    const res = await createSubtask(task.id, {
+      title: newSubtaskTitle.trim(),
+      assigned_to: newSubtaskAssigneeId ? Number(newSubtaskAssigneeId) : null,
+      due_date: newSubtaskDueDate || null
+    });
+
+    setIsCreatingSubtask(false);
+
+    if (res.success && res.data) {
+      setSubtasks(prev => [...prev, res.data!]);
+      setNewSubtaskTitle('');
+      setNewSubtaskDueDate('');
+      setNewSubtaskAssigneeId(null);
+      setShowAddSubtaskForm(false);
+      await loadTaskExtras(task.id);
+    } else {
+      setErrorMessage(res.message || 'Failed to create subtask');
+    }
+  };
+
+  const handleToggleSubtaskStatus = async (subtaskId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+    // Optimistic update
+    setSubtasks(prev => prev.map(s => s.id === subtaskId ? { ...s, status: newStatus } : s));
+
+    const res = await updateSubtask(subtaskId, { status: newStatus }, task.id);
+    if (!res.success) {
+      // Revert on failure
+      setSubtasks(prev => prev.map(s => s.id === subtaskId ? { ...s, status: currentStatus as any } : s));
+      setErrorMessage(res.message || 'Failed to update subtask status');
+    } else {
+      await loadTaskExtras(task.id);
+    }
+  };
+
+  const handleUpdateSubtaskAssignee = async (subtaskId: number, newAssigneeId: number | null) => {
+    const res = await updateSubtask(subtaskId, { assigned_to: newAssigneeId }, task.id);
+    if (res.success && res.data) {
+      setSubtasks(prev => prev.map(s => s.id === subtaskId ? res.data! : s));
+      await loadTaskExtras(task.id);
+    } else {
+      setErrorMessage(res.message || 'Failed to reassign subtask');
+    }
+  };
+
+  const handleDeleteSubtask = async (subtaskId: number, subtaskTitle: string) => {
+    if (!confirm(`Delete subtask "${subtaskTitle}"?`)) return;
+
+    const res = await deleteSubtask(subtaskId, task.id);
+    if (res.success) {
+      setSubtasks(prev => prev.filter(s => s.id !== subtaskId));
+      await loadTaskExtras(task.id);
+    } else {
+      setErrorMessage(res.message || 'Failed to delete subtask');
     }
   };
 
@@ -138,6 +241,87 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
     }
   };
 
+  // File Upload Handlers (Optimized for Mobile Phone Cameras & Desktop)
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    processAndUploadFile(files[0]);
+    e.target.value = '';
+  };
+
+  const processAndUploadFile = (file: File) => {
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorMessage('File size exceeds 25MB limit. Please choose a smaller file.');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadStatusText(`Uploading ${file.name}...`);
+    setErrorMessage(null);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result as string;
+        const res = await uploadAttachment(task.id, {
+          file_name: file.name,
+          file_type: file.type || 'application/octet-stream',
+          file_base64: base64Data
+        });
+
+        setIsUploadingFile(false);
+        setUploadStatusText('');
+
+        if (res.success && res.data) {
+          setAttachments(prev => [res.data!, ...prev]);
+          await loadTaskExtras(task.id);
+        } else {
+          setErrorMessage(res.message || 'Failed to upload file.');
+        }
+      } catch (err: any) {
+        setIsUploadingFile(false);
+        setUploadStatusText('');
+        setErrorMessage(err?.message || 'Error processing file upload.');
+      }
+    };
+
+    reader.onerror = () => {
+      setIsUploadingFile(false);
+      setUploadStatusText('');
+      setErrorMessage('Failed to read file from your device.');
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteAttachment = async (attId: number, fileName: string) => {
+    if (!confirm(`Delete attachment '${fileName}'?`)) return;
+
+    const res = await deleteAttachment(task.id, attId);
+    if (res.success) {
+      setAttachments(prev => prev.filter(a => a.id !== attId));
+      await loadTaskExtras(task.id);
+    } else {
+      setErrorMessage(res.message || 'Failed to delete attachment.');
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const isImageAttachment = (att: PMAttachment) => {
+    return (
+      (att.file_type && att.file_type.startsWith('image/')) ||
+      (att.file_url && att.file_url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)) ||
+      (att.file_name && att.file_name.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i))
+    );
+  };
+
   const getActivityDetails = (act: PMActivityLog) => {
     const action = act.action;
 
@@ -180,39 +364,9 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
         tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
       };
     }
-    if (action === 'updated_due_date') {
+    if (action === 'priority_changed') {
       return {
-        title: 'Updated due date',
-        description: (
-          <span className="inline-flex items-center space-x-1 font-medium">
-            <span className="text-slate-500 line-through">{act.old_value || 'None'}</span>
-            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
-            <span className="text-purple-700 font-bold">{act.new_value || 'Removed'}</span>
-          </span>
-        ),
-        icon: <Calendar className="w-3.5 h-3.5 text-purple-600" />,
-        tag: 'Due Date',
-        tagColor: 'bg-purple-50 text-purple-700 border-purple-200'
-      };
-    }
-    if (action === 'updated_start_date') {
-      return {
-        title: 'Updated start date',
-        description: (
-          <span className="inline-flex items-center space-x-1 font-medium">
-            <span className="text-slate-500 line-through">{act.old_value || 'None'}</span>
-            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
-            <span className="text-purple-700 font-bold">{act.new_value || 'Removed'}</span>
-          </span>
-        ),
-        icon: <Calendar className="w-3.5 h-3.5 text-purple-600" />,
-        tag: 'Start Date',
-        tagColor: 'bg-purple-50 text-purple-700 border-purple-200'
-      };
-    }
-    if (action === 'updated_priority') {
-      return {
-        title: 'Changed priority',
+        title: 'Updated priority',
         description: (
           <span className="inline-flex items-center space-x-1 font-medium">
             <span className="text-slate-500 line-through">{act.old_value}</span>
@@ -225,18 +379,51 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
         tagColor: 'bg-amber-50 text-amber-700 border-amber-200'
       };
     }
-    if (action === 'updated_title') {
+    if (action === 'due_date_changed') {
       return {
-        title: 'Renamed task',
-        description: <span className="font-semibold text-slate-800">"{act.new_value}"</span>,
-        icon: <Edit3 className="w-3.5 h-3.5 text-slate-600" />,
-        tag: 'Title',
-        tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
+        title: 'Updated due date',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value || 'None'}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-purple-700 font-bold">{act.new_value || 'None'}</span>
+          </span>
+        ),
+        icon: <Calendar className="w-3.5 h-3.5 text-purple-600" />,
+        tag: 'Schedule',
+        tagColor: 'bg-purple-50 text-purple-700 border-purple-200'
       };
     }
-    if (action === 'updated_description') {
+    if (action === 'commented') {
       return {
-        title: 'Updated description',
+        title: 'Added a comment',
+        description: null,
+        icon: <MessageSquare className="w-3.5 h-3.5 text-blue-600" />,
+        tag: 'Comment',
+        tagColor: 'bg-blue-50 text-blue-700 border-blue-200'
+      };
+    }
+    if (action === 'attachment_added') {
+      return {
+        title: 'Uploaded an attachment',
+        description: <span className="font-bold text-slate-800">{act.new_value}</span>,
+        icon: <Paperclip className="w-3.5 h-3.5 text-violet-600" />,
+        tag: 'Attachment',
+        tagColor: 'bg-violet-50 text-violet-700 border-violet-200'
+      };
+    }
+    if (action === 'attachment_deleted') {
+      return {
+        title: 'Deleted attachment',
+        description: <span className="line-through text-slate-500">{act.old_value}</span>,
+        icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
+        tag: 'Removed',
+        tagColor: 'bg-rose-50 text-rose-700 border-rose-200'
+      };
+    }
+    if (action === 'updated_details') {
+      return {
+        title: 'Updated task title / description',
         description: null,
         icon: <Edit3 className="w-3.5 h-3.5 text-slate-600" />,
         tag: 'Details',
@@ -273,6 +460,54 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
         tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
       };
     }
+    if (action === 'subtask_created') {
+      return {
+        title: 'Added a subtask',
+        description: <span className="font-bold text-slate-800">{act.new_value}</span>,
+        icon: <CheckSquare className="w-3.5 h-3.5 text-blue-600" />,
+        tag: 'Subtask',
+        tagColor: 'bg-blue-50 text-blue-700 border-blue-200'
+      };
+    }
+    if (action === 'subtask_status_changed') {
+      return {
+        title: 'Updated subtask status',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-emerald-700 font-bold">{act.new_value}</span>
+          </span>
+        ),
+        icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
+        tag: 'Subtask',
+        tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      };
+    }
+    if (action === 'subtask_reassigned') {
+      return {
+        title: 'Reassigned subtask',
+        description: (
+          <span className="inline-flex items-center space-x-1 font-medium">
+            <span className="text-slate-500 line-through">{act.old_value || 'Unassigned'}</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 inline mx-0.5" />
+            <span className="text-indigo-700 font-bold">{act.new_value}</span>
+          </span>
+        ),
+        icon: <UserCheck className="w-3.5 h-3.5 text-indigo-600" />,
+        tag: 'Subtask',
+        tagColor: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+      };
+    }
+    if (action === 'subtask_deleted') {
+      return {
+        title: 'Deleted subtask',
+        description: <span className="line-through text-slate-500">{act.old_value}</span>,
+        icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
+        tag: 'Subtask',
+        tagColor: 'bg-rose-50 text-rose-700 border-rose-200'
+      };
+    }
     if (action === 'deleted') {
       return {
         title: 'Moved to trash',
@@ -298,207 +533,223 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
         <span>{act.old_value ? `${act.old_value} → ` : ''}{act.new_value}</span>
       ) : null,
       icon: <History className="w-3.5 h-3.5 text-slate-600" />,
-      tag: 'Update',
+      tag: 'Activity',
       tagColor: 'bg-slate-100 text-slate-700 border-slate-200'
     };
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-white border-l border-slate-200 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
-      {/* Header */}
-      <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-            <FileText className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-bold">
-              <span>TASK #{task.id}</span>
-              <span>•</span>
-              <span className="text-blue-700">{task.project_name}</span>
+    <div className="fixed inset-0 z-50 flex justify-end">
+      {/* Mobile/Desktop Backdrop */}
+      <div 
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Slide-out Drawer */}
+      <div className="relative z-10 w-full max-w-full sm:max-w-xl md:max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between h-full animate-in slide-in-from-right duration-300">
+        
+        {/* Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/80">
+          <div className="flex items-center space-x-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold shrink-0">
+              <FileText className="w-4 h-4" />
             </div>
-            <h2 className="text-sm font-extrabold text-slate-900 truncate max-w-md">{task.title}</h2>
-          </div>
-        </div>
-
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-xl bg-white hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200 shadow-2xs"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Main Drawer Content */}
-      <div className="p-6 overflow-y-auto flex-1 space-y-6">
-        {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2 font-medium">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {saveSuccess && (
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center space-x-2 font-medium">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Task updated successfully! Audit log created.</span>
-          </div>
-        )}
-
-        {/* Task Title */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700">Task Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
-          />
-        </div>
-
-        {/* REASSIGNMENT CONTROL */}
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1.5">
-              <User className="w-4 h-4 text-blue-600" />
-              <label className="text-xs font-bold text-slate-900">Assigned Team Member</label>
+            <div className="overflow-hidden">
+              <div className="flex items-center space-x-2 text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                <span>TASK #{task.id}</span>
+                <span>•</span>
+                <span className="text-blue-700 dark:text-blue-400 truncate">{task.project_name}</span>
+              </div>
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate">{task.title}</h2>
             </div>
-
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center space-x-1">
-              <ShieldCheck className="w-3 h-3 text-blue-600" />
-              <span>Reassignments Logged & Audited</span>
-            </span>
           </div>
 
-          <select
-            value={assignedToId}
-            onChange={e => setAssignedToId(Number(e.target.value))}
-            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0"
           >
-            {users
-              .filter(u => u.username.toLowerCase() !== 'shootside' && u.id !== 1)
-              .map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.name} (@{u.username}) — {u.email}
-                </option>
-              ))}
-          </select>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {assignedToId !== (task.assigned_to_id || task.assigned_to?.id) && (
-            <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg font-medium">
-              ⚠️ Reassigning from <strong>{task.assigned_to?.name || 'Previous'}</strong> to <strong>{users.find(u => u.id === assignedToId)?.name || 'Selected'}</strong>. This change will be permanently logged in the audit trail.
-            </p>
+        {/* Main Drawer Scrollable Content */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2 font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
           )}
-        </div>
 
-        {/* Status & Priority */}
-        <div className="grid grid-cols-2 gap-4">
+          {saveSuccess && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center space-x-2 font-medium">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Task updated successfully! Audit log created.</span>
+            </div>
+          )}
+
+          {/* Task Title */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Status</label>
-            <select
-              value={status}
-              onChange={e => setStatus(e.target.value as TaskStatus)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white"
-            >
-              <option value="To Do">To Do</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Review">Review</option>
-              <option value="Completed">Completed</option>
-              <option value="On Hold">On Hold</option>
-            </select>
+            <label className="text-xs font-bold text-slate-700">Task Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500 bg-slate-50/50"
+            />
           </div>
 
+          {/* Task Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Priority</label>
-            <select
-              value={priority}
-              onChange={e => setPriority(e.target.value as PriorityLevel)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white"
-            >
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-              <option value="Urgent">Urgent</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Progress Slider */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-700">Progress Completion</span>
-            <span className="font-extrabold text-blue-600">{progress}%</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={progress}
-            onChange={e => setProgress(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-        </div>
-
-        {/* Description */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700">Description</label>
-          <textarea
-            rows={3}
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
-          />
-        </div>
-
-        {/* Dates & Hours */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-600">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:bg-white"
+            <label className="text-xs font-bold text-slate-700">Description</label>
+            <textarea
+              rows={3}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 bg-slate-50/50 resize-none"
+              placeholder="Add detailed task instructions, scope, or context..."
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-600">Due Date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:bg-white"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-600">Est. Hours</label>
-            <input
-              type="number"
-              step="0.5"
-              value={estimatedHours}
-              onChange={e => setEstimatedHours(Number(e.target.value))}
-              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:bg-white"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-600">Actual Hours</label>
-            <input
-              type="number"
-              step="0.5"
-              value={actualHours}
-              onChange={e => setActualHours(Number(e.target.value))}
-              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:bg-white"
-            />
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="pt-4 border-t border-slate-200 space-y-4">
-          <div className="flex items-center space-x-6 border-b border-slate-200">
+          {/* Assignment, Status & Priority Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Status */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600">Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value as TaskStatus)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="To Do">To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Review">Review</option>
+                <option value="Completed">Completed</option>
+                <option value="On Hold">On Hold</option>
+              </select>
+            </div>
+
+            {/* Priority */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600">Priority</label>
+              <select
+                value={priority}
+                onChange={e => setPriority(e.target.value as PriorityLevel)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+            </div>
+
+            {/* Reassignment Dropdown */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
+                <span>Assigned To</span>
+                <span className="text-[10px] text-indigo-600 font-semibold">Tracked</span>
+              </label>
+              <select
+                value={assignedToId}
+                onChange={e => setAssignedToId(Number(e.target.value))}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-indigo-900 bg-indigo-50/40 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="0">-- Unassigned --</option>
+                {users
+                  .filter(u => {
+                    const uRole = (u.role || '').toLowerCase();
+                    const uName = (u.name || '').toLowerCase();
+                    const uLogin = (u.username || '').toLowerCase();
+                    return uRole !== 'admin' && uRole !== 'administrator' && uName !== 'shootside' && uLogin !== 'shootside';
+                  })
+                  .map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.name || u.username} ({u.role || 'Member'})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Dates & Timeline */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600 flex items-center space-x-1">
+                <Calendar className="w-3 h-3 text-slate-400" />
+                <span>Start Date</span>
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600 flex items-center space-x-1">
+                <Calendar className="w-3 h-3 text-slate-400" />
+                <span>Due Date</span>
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Progress & Hours Log */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Progress ({progress}%)</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={progress}
+                onChange={e => setProgress(Number(e.target.value))}
+                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Estimated Hours</label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={estimatedHours}
+                onChange={e => setEstimatedHours(Number(e.target.value))}
+                className="w-full px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Actual Hours</label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={actualHours}
+                onChange={e => setActualHours(Number(e.target.value))}
+                className="w-full px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Tab Navigation (Discussion, Files, Subtasks, Audit Trail) */}
+          <div className="border-b border-slate-200 dark:border-slate-800 flex items-center space-x-3 sm:space-x-6 overflow-x-auto">
             <button
               onClick={() => setActiveTab('comments')}
-              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 ${
-                activeTab === 'comments' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-900'
+              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'comments'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -507,18 +758,36 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
 
             <button
               onClick={() => setActiveTab('attachments')}
-              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 ${
-                activeTab === 'attachments' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-900'
+              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'attachments'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Paperclip className="w-3.5 h-3.5" />
-              <span>Files ({attachments.length})</span>
+              <span>Files & Photos ({attachments.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('subtasks')}
+              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'subtasks'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>
+                Subtasks ({subtasks.filter(s => s.status === 'completed').length}/{subtasks.length})
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab('audit')}
-              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 ${
-                activeTab === 'audit' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-900'
+              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'audit'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
@@ -526,10 +795,214 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
             </button>
           </div>
 
-          {/* Comments */}
+          {/* 0. Subtasks Tab */}
+          {activeTab === 'subtasks' && (
+            <div className="space-y-4">
+              {/* Progress Summary */}
+              {subtasks.length > 0 && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700">Subtask Completion</span>
+                    <span className="font-bold text-blue-600">
+                      {subtasks.filter(s => s.status === 'completed').length} of {subtasks.length} (
+                      {Math.round((subtasks.filter(s => s.status === 'completed').length / subtasks.length) * 100)}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.round(
+                          (subtasks.filter(s => s.status === 'completed').length / subtasks.length) * 100
+                        )}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Subtasks List */}
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {subtasks.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 font-medium bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                    <ListTodo className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                    No subtasks yet. Break down this task into smaller steps below.
+                  </div>
+                ) : (
+                  subtasks.map(subtask => {
+                    const isCompleted = subtask.status === 'completed';
+                    return (
+                      <div
+                        key={subtask.id}
+                        className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs ${
+                          isCompleted
+                            ? 'bg-slate-50/70 border-slate-200 text-slate-400'
+                            : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
+                        }`}
+                      >
+                        {/* Title & Checkbox */}
+                        <div className="flex items-start sm:items-center space-x-2.5 min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSubtaskStatus(subtask.id, subtask.status)}
+                            className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                            title={isCompleted ? 'Mark as incomplete' : 'Mark as completed'}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+
+                          <span
+                            className={`font-semibold leading-snug break-words ${
+                              isCompleted ? 'line-through text-slate-400' : 'text-slate-800'
+                            }`}
+                          >
+                            {subtask.title}
+                          </span>
+                        </div>
+
+                        {/* Assignee, Due Date, and Delete Controls */}
+                        <div className="flex items-center space-x-2 shrink-0 pl-6 sm:pl-0">
+                          {/* Assignee Dropdown */}
+                          <select
+                            value={
+                              typeof subtask.assigned_to === 'object'
+                                ? subtask.assigned_to?.id || ''
+                                : subtask.assigned_to_id || subtask.assigned_to || ''
+                            }
+                            onChange={e =>
+                              handleUpdateSubtaskAssignee(
+                                subtask.id,
+                                e.target.value ? Number(e.target.value) : null
+                              )
+                            }
+                            className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 focus:outline-none cursor-pointer hover:bg-white"
+                          >
+                            <option value="">Unassigned</option>
+                            {users.map(u => (
+                              <option key={u.id} value={u.id}>
+                                {u.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          {/* Due Date */}
+                          {subtask.due_date && (
+                            <span className="flex items-center space-x-1 text-[10px] text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span>{subtask.due_date}</span>
+                            </span>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSubtask(subtask.id, subtask.title)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            title="Delete subtask"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Add Subtask Button or Expandable Form */}
+              {!showAddSubtaskForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAddSubtaskForm(true)}
+                  className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl border border-dashed border-blue-300 dark:border-blue-800/80 bg-blue-50/60 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Subtask</span>
+                </button>
+              ) : (
+                <form
+                  onSubmit={handleCreateSubtask}
+                  className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5 animate-in fade-in duration-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 flex items-center space-x-1.5">
+                      <Plus className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Add New Subtask</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSubtaskForm(false)}
+                      className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="What subtask needs to be completed?..."
+                    value={newSubtaskTitle}
+                    onChange={e => setNewSubtaskTitle(e.target.value)}
+                    autoFocus
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  />
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <select
+                      value={newSubtaskAssigneeId || ''}
+                      onChange={e => setNewSubtaskAssigneeId(e.target.value ? Number(e.target.value) : null)}
+                      className="flex-1 min-w-[140px] px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none"
+                    >
+                      <option value="">Assign To (Optional)</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="date"
+                      value={newSubtaskDueDate}
+                      onChange={e => setNewSubtaskDueDate(e.target.value)}
+                      className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none"
+                      placeholder="Due Date"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={!newSubtaskTitle.trim() || isCreatingSubtask}
+                      className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs disabled:opacity-40 transition-all cursor-pointer"
+                    >
+                      {isCreatingSubtask ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Save className="w-3.5 h-3.5" />
+                      )}
+                      <span>Save Subtask</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSubtaskForm(false)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* 1. Comments Tab */}
           {activeTab === 'comments' && (
             <div className="space-y-4">
-              <div className="space-y-3 max-h-60 overflow-y-auto">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 {comments.length === 0 ? (
                   <p className="text-xs text-slate-400 text-center py-4 font-medium">
                     No comments yet. Start the discussion below.
@@ -567,12 +1040,12 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                   placeholder="Write a comment..."
                   value={newCommentText}
                   onChange={e => setNewCommentText(e.target.value)}
-                  className="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
                 />
                 <button
                   type="submit"
                   disabled={!newCommentText.trim()}
-                  className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs"
+                  className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
@@ -580,38 +1053,181 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
             </div>
           )}
 
-          {/* Files */}
+          {/* 2. Files & Photos Tab (Fully Mobile Optimized + Desktop Drag-and-Drop) */}
           {activeTab === 'attachments' && (
-            <div className="space-y-3">
-              <div className="p-6 border border-dashed border-slate-300 bg-slate-50 rounded-xl text-center space-y-2">
-                <UploadCloud className="w-8 h-8 mx-auto text-blue-600" />
-                <p className="text-xs text-slate-700 font-bold">Upload deliverable files or screenshots</p>
-                <p className="text-[10px] text-slate-400">Stored securely via WordPress Media API</p>
+            <div className="space-y-4">
+              {/* Hidden File Inputs */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                accept="*/*"
+              />
+              <input
+                type="file"
+                ref={cameraInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                accept="image/*"
+                capture="environment"
+              />
+
+              {/* Upload Card / Dropzone */}
+              <div
+                onDragOver={e => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    processAndUploadFile(e.dataTransfer.files[0]);
+                  }
+                }}
+                className={`p-5 rounded-2xl border-2 border-dashed transition-all text-center space-y-3 ${
+                  isDragging
+                    ? 'border-blue-500 bg-blue-50/80 scale-99'
+                    : 'border-slate-300 bg-slate-50/80 hover:bg-slate-50 hover:border-slate-400'
+                }`}
+              >
+                {isUploadingFile ? (
+                  <div className="py-4 flex flex-col items-center justify-center space-y-2">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                    <p className="text-xs font-bold text-slate-800">{uploadStatusText || 'Uploading file...'}</p>
+                    <p className="text-[10px] text-slate-400">Please wait while the file is processed...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                      <UploadCloud className="w-5 h-5" />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Upload Task Files, Documents & Photos</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Supports images, PDFs, documents, screenshots (Up to 25MB)</p>
+                    </div>
+
+                    {/* Dual Action Buttons (Specifically friendly for Mobile Touch & Phones) */}
+                    <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 shadow-2xs cursor-pointer active:scale-95 transition-all"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Take Photo / Camera</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Choose File / Gallery</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {attachments.map(att => (
-                <div key={att.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <Paperclip className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <p className="font-bold text-slate-900">{att.file_name}</p>
-                      <p className="text-[10px] text-slate-500 font-medium">By {att.user?.name} • {Math.round(att.file_size / 1024)} KB</p>
-                    </div>
+              {/* Uploaded Files List */}
+              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                {attachments.length === 0 ? (
+                  <div className="p-5 text-center text-xs text-slate-400 font-medium bg-slate-50/50 rounded-xl border border-slate-200">
+                    <Paperclip className="w-5 h-5 mx-auto mb-1 text-slate-300" />
+                    No files or photos uploaded for this task yet.
                   </div>
-                  <a
-                    href={att.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-600 font-bold hover:underline"
-                  >
-                    View
-                  </a>
-                </div>
-              ))}
+                ) : (
+                  attachments.map(att => {
+                    const isImg = isImageAttachment(att);
+                    const canDelete = isAdmin || (user && user.id === att.user_id);
+
+                    return (
+                      <div
+                        key={att.id}
+                        className="p-3 rounded-xl bg-slate-50/90 border border-slate-200 hover:bg-white hover:border-slate-300 transition-all flex items-center justify-between gap-3 text-xs"
+                      >
+                        {/* File Thumbnail & Name */}
+                        <div className="flex items-center space-x-3 min-w-0">
+                          {isImg ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImageUrl(att.file_url)}
+                              className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 group cursor-pointer"
+                            >
+                              <img
+                                src={att.file_url}
+                                alt={att.file_name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <Eye className="w-3.5 h-3.5 text-white" />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 font-bold">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                          )}
+
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 truncate" title={att.file_name}>
+                              {att.file_name}
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                              {formatFileSize(att.file_size)} • {att.user?.name || 'Member'} • <span className="font-mono">{att.created_at.substring(0, 10)}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center space-x-1 shrink-0">
+                          {isImg && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImageUrl(att.file_url)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Preview"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          <a
+                            href={att.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={att.file_name}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Open / Download"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAttachment(att.id, att.file_name)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                              title="Delete file"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           )}
 
-          {/* Audit Trail - Small line layout with full details */}
+          {/* 3. Audit Trail - Small line layout with full details */}
           {activeTab === 'audit' && (
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {taskActivities.length === 0 ? (
@@ -645,8 +1261,8 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                         </div>
                       </div>
 
-                      {/* Content line */}
-                      <div className="flex-1 min-w-0 space-y-1">
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 space-y-0.5">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center space-x-1.5 flex-wrap">
                             <span className="font-bold text-slate-900">{act.user_name}</span>
@@ -681,38 +1297,74 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
             </div>
           )}
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-        {isAdmin ? (
-          <button
-            onClick={handleDeleteTask}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold cursor-pointer transition-all border border-rose-200"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Delete (Admin)</span>
-          </button>
-        ) : <div />}
+        {/* Footer */}
+        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
+          {isAdmin ? (
+            <button
+              onClick={handleDeleteTask}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-400 text-xs font-bold cursor-pointer transition-all border border-rose-200 dark:border-rose-800 shrink-0"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete (Admin)</span>
+            </button>
+          ) : <div />}
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-xs font-bold border border-slate-200 cursor-pointer shadow-2xs"
-          >
-            Close
-          </button>
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <button
+              onClick={onClose}
+              className="px-3 sm:px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
+            >
+              Close
+            </button>
 
-          <button
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-            className="flex items-center space-x-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 cursor-pointer transition-all"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
-          </button>
+            <button
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              className="flex items-center space-x-1.5 px-4 sm:px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 cursor-pointer transition-all shrink-0"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Image Preview Lightbox Modal */}
+      {previewImageUrl && (
+        <div 
+          className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div 
+            className="relative max-w-3xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl p-2 flex flex-col items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setPreviewImageUrl(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 hover:bg-black text-white cursor-pointer z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={previewImageUrl}
+              alt="Attachment Preview"
+              className="max-h-[80vh] w-auto object-contain rounded-lg"
+            />
+            <div className="mt-3 flex items-center space-x-3">
+              <a
+                href={previewImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center space-x-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Open / Download Full Size</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

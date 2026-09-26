@@ -46,6 +46,26 @@ export interface PMProject {
 
 export type TaskStatus = 'To Do' | 'In Progress' | 'Review' | 'Completed' | 'On Hold';
 
+export function normalizeTaskStatus(status?: string | null): TaskStatus {
+  if (!status) return 'To Do';
+  const s = status.trim().toLowerCase().replace(/[-_]/g, ' ');
+  if (s === 'in progress' || s === 'inprogress') return 'In Progress';
+  if (s === 'to do' || s === 'todo') return 'To Do';
+  if (s === 'review' || s === 'in review' || s === 'inreview') return 'Review';
+  if (s === 'completed' || s === 'complete' || s === 'done') return 'Completed';
+  if (s === 'on hold' || s === 'onhold') return 'On Hold';
+  return 'To Do';
+}
+
+export function normalizePriority(priority?: string | null): PriorityLevel {
+  if (!priority) return 'Medium';
+  const p = priority.trim().toLowerCase();
+  if (p === 'urgent') return 'Urgent';
+  if (p === 'high') return 'High';
+  if (p === 'low') return 'Low';
+  return 'Medium';
+}
+
 export interface PMTask {
   id: number;
   project_id: number;
@@ -66,9 +86,26 @@ export interface PMTask {
   progress: number;
   comments_count: number;
   attachments_count: number;
+  subtasks_count?: number;
+  subtasks_completed_count?: number;
+  subtasks?: PMSubtask[];
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
+}
+
+export interface PMSubtask {
+  id: number;
+  task_id: number;
+  title: string;
+  assigned_to_id?: number | null;
+  assigned_to?: PMUser | number | null;
+  status: 'todo' | 'in_progress' | 'completed';
+  due_date?: string | null;
+  created_by?: number | PMUser | null;
+  user?: PMUser | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PMComment {
@@ -144,3 +181,20 @@ export interface DeletedItemsResponse {
   projects: PMProject[];
   tasks: PMTask[];
 }
+
+export interface PMVaultItem {
+  id: number;
+  title: string;
+  category: string;
+  service_url?: string;
+  username: string;
+  password: string;
+  notes?: string;
+  created_by: number;
+  user?: PMUser;
+  updated_by?: number;
+  updater?: PMUser;
+  created_at: string;
+  updated_at: string;
+}
+
