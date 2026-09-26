@@ -31,11 +31,12 @@ import {
   Plus,
   CheckSquare,
   Square,
-  ListTodo
+  ListTodo,
+  AtSign
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
-import { PMTask, PMComment, PMAttachment, PMActivityLog, PMSubtask, TaskStatus, PriorityLevel, normalizeTaskStatus, normalizePriority } from '@/lib/pm-types';
+import { PMUser, PMTask, PMComment, PMAttachment, PMActivityLog, PMSubtask, TaskStatus, PriorityLevel, normalizeTaskStatus, normalizePriority } from '@/lib/pm-types';
 import { pmApi } from '@/lib/pm-api';
 
 interface PMTaskDetailDrawerProps {
@@ -54,7 +55,9 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
     deleteAttachment,
     createSubtask,
     updateSubtask,
-    deleteSubtask
+    deleteSubtask,
+    getSubtaskComments,
+    addSubtaskComment
   } = usePMData();
 
   const [title, setTitle] = useState(task.title);
@@ -78,12 +81,29 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Mentions State
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [mentionCursorPos, setMentionCursorPos] = useState<number>(0);
+  const commentInputRef = useRef<HTMLInputElement>(null);
+
   // Subtask Create Form States
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskAssigneeId, setNewSubtaskAssigneeId] = useState<number | null>(null);
   const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
   const [isCreatingSubtask, setIsCreatingSubtask] = useState(false);
   const [showAddSubtaskForm, setShowAddSubtaskForm] = useState(false);
+
+  // Subtask Comments State
+  const [expandedSubtaskId, setExpandedSubtaskId] = useState<number | null>(null);
+  const [subtaskCommentsMap, setSubtaskCommentsMap] = useState<Record<number, PMComment[]>>({});
+  const [loadingSubtaskCommentsMap, setLoadingSubtaskCommentsMap] = useState<Record<number, boolean>>({});
+  const [subtaskCommentInputMap, setSubtaskCommentInputMap] = useState<Record<number, string>>({});
+  const [subtaskMentionQuery, setSubtaskMentionQuery] = useState('');
+  const [showSubtaskMentionSuggestions, setShowSubtaskMentionSuggestions] = useState<number | null>(null);
+  const [subtaskMentionIndex, setSubtaskMentionIndex] = useState(0);
+  const [subtaskMentionCursorPos, setSubtaskMentionCursorPos] = useState(0);
 
   // File Upload States
   const [isUploadingFile, setIsUploadingFile] = useState(false);
@@ -221,14 +241,209 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
     }
   };
 
+  // Mention Handlers
+  const filteredMentionUsers = users.filter(u => {
+    const q = mentionQuery.toLowerCase();
+    return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+  });
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const pos = e.target.selectionStart || val.length;
+    setNewCommentText(val);
+    setMentionCursorPos(pos);
+
+    // Look back from current cursor position for '@'
+    const textBeforeCursor = val.slice(0, pos);
+    const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_\.\-]*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
+      setShowMentionSuggestions(true);
+      setMentionIndex(0);
+    } else {
+      setShowMentionSuggestions(false);
+    }
+  };
+
+  const insertMention = (targetUser: PMUser) => {
+    const textBeforeCursor = newCommentText.slice(0, mentionCursorPos);
+    const textAfterCursor = newCommentText.slice(mentionCursorPos);
+
+    // Replace the '@...' with '@Name '
+    const mentionTag = `@${targetUser.name.replace(/\s+/g, '')} `;
+    const updatedBefore = textBeforeCursor.replace(/(?:^|\s)@([a-zA-Z0-9_\.\-]*)$/, (match) => {
+      return match.startsWith(' ') ? ` ${mentionTag}` : mentionTag;
+    });
+
+    const newText = updatedBefore + textAfterCursor;
+    setNewCommentText(newText);
+    setShowMentionSuggestions(false);
+
+    setTimeout(() => {
+      if (commentInputRef.current) {
+        commentInputRef.current.focus();
+        const nextPos = updatedBefore.length;
+        commentInputRef.current.setSelectionRange(nextPos, nextPos);
+      }
+    }, 10);
+  };
+
+  const handleCommentKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showMentionSuggestions && filteredMentionUsers.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex(prev => (prev + 1) % filteredMentionUsers.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex(prev => (prev - 1 + filteredMentionUsers.length) % filteredMentionUsers.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertMention(filteredMentionUsers[mentionIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowMentionSuggestions(false);
+        return;
+      }
+    }
+  };
+
+  const renderCommentContent = (text: string) => {
+    const parts = text.split(/(@[a-zA-Z0-9_\.\-]+)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('@')) {
+        return (
+          <span
+            key={idx}
+            className="inline-flex items-center space-x-0.5 px-1.5 py-0.2 mx-0.5 rounded-md text-[11px] font-bold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+          >
+            <AtSign className="w-2.5 h-2.5 inline mr-0.5" />
+            <span>{part.slice(1)}</span>
+          </span>
+        );
+      }
+      return <span key={idx}>{part}</span>;
+    });
+  };
+
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim()) return;
 
+    setShowMentionSuggestions(false);
     const res = await addComment(task.id, newCommentText.trim());
     if (res.success && res.data) {
       setComments(prev => [...prev, res.data!]);
       setNewCommentText('');
+      await loadTaskExtras(task.id);
+    }
+  };
+
+  // Subtask Comments Handlers
+  const handleToggleSubtaskComments = async (subtaskId: number) => {
+    if (expandedSubtaskId === subtaskId) {
+      setExpandedSubtaskId(null);
+      return;
+    }
+
+    setExpandedSubtaskId(subtaskId);
+    setLoadingSubtaskCommentsMap(prev => ({ ...prev, [subtaskId]: true }));
+    try {
+      const res = await getSubtaskComments(subtaskId);
+      if (res.success && res.data) {
+        setSubtaskCommentsMap(prev => ({ ...prev, [subtaskId]: res.data! }));
+      }
+    } finally {
+      setLoadingSubtaskCommentsMap(prev => ({ ...prev, [subtaskId]: false }));
+    }
+  };
+
+  const handleSubtaskCommentChange = (subtaskId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const pos = e.target.selectionStart || val.length;
+    setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: val }));
+    setSubtaskMentionCursorPos(pos);
+
+    const textBeforeCursor = val.slice(0, pos);
+    const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_\.\-]*)$/);
+    if (match) {
+      setSubtaskMentionQuery(match[1]);
+      setShowSubtaskMentionSuggestions(subtaskId);
+      setSubtaskMentionIndex(0);
+    } else {
+      setShowSubtaskMentionSuggestions(null);
+    }
+  };
+
+  const insertSubtaskMention = (subtaskId: number, targetUser: PMUser) => {
+    const currentText = subtaskCommentInputMap[subtaskId] || '';
+    const textBeforeCursor = currentText.slice(0, subtaskMentionCursorPos);
+    const textAfterCursor = currentText.slice(subtaskMentionCursorPos);
+
+    const mentionTag = `@${targetUser.name.replace(/\s+/g, '')} `;
+    const updatedBefore = textBeforeCursor.replace(/(?:^|\s)@([a-zA-Z0-9_\.\-]*)$/, (match) => {
+      return match.startsWith(' ') ? ` ${mentionTag}` : mentionTag;
+    });
+
+    const newText = updatedBefore + textAfterCursor;
+    setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: newText }));
+    setShowSubtaskMentionSuggestions(null);
+  };
+
+  const handleSubtaskCommentKeyDown = (subtaskId: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    const filteredUsers = users.filter(u => {
+      const q = subtaskMentionQuery.toLowerCase();
+      return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+    });
+
+    if (showSubtaskMentionSuggestions === subtaskId && filteredUsers.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSubtaskMentionIndex(prev => (prev + 1) % filteredUsers.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSubtaskMentionIndex(prev => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertSubtaskMention(subtaskId, filteredUsers[subtaskMentionIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowSubtaskMentionSuggestions(null);
+        return;
+      }
+    }
+  };
+
+  const handlePostSubtaskComment = async (subtaskId: number, e: React.FormEvent) => {
+    e.preventDefault();
+    const commentText = (subtaskCommentInputMap[subtaskId] || '').trim();
+    if (!commentText) return;
+
+    setShowSubtaskMentionSuggestions(null);
+    const res = await addSubtaskComment(subtaskId, commentText);
+    if (res.success && res.data) {
+      setSubtaskCommentsMap(prev => ({
+        ...prev,
+        [subtaskId]: [...(prev[subtaskId] || []), res.data!]
+      }));
+      setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: '' }));
+
+      setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
+        ...st,
+        comments_count: (st.comments_count || 0) + 1
+      } : st));
+
       await loadTaskExtras(task.id);
     }
   };
@@ -831,82 +1046,223 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                 ) : (
                   subtasks.map(subtask => {
                     const isCompleted = subtask.status === 'completed';
+                    const isCommentsOpen = expandedSubtaskId === subtask.id;
+                    const commentsCount = subtask.comments_count ?? (subtaskCommentsMap[subtask.id]?.length ?? 0);
+
                     return (
                       <div
                         key={subtask.id}
-                        className={`p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs ${
+                        className={`p-3 rounded-xl border transition-all flex flex-col gap-2.5 text-xs ${
                           isCompleted
                             ? 'bg-slate-50/70 border-slate-200 text-slate-400'
                             : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
                         }`}
                       >
-                        {/* Title & Checkbox */}
-                        <div className="flex items-start sm:items-center space-x-2.5 min-w-0 flex-1">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSubtaskStatus(subtask.id, subtask.status)}
-                            className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer mt-0.5 sm:mt-0 shrink-0"
-                            title={isCompleted ? 'Mark as incomplete' : 'Mark as completed'}
-                          >
-                            {isCompleted ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                            ) : (
-                              <Square className="w-4 h-4 text-slate-400" />
-                            )}
-                          </button>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                          {/* Title & Checkbox */}
+                          <div className="flex items-start sm:items-center space-x-2.5 min-w-0 flex-1">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSubtaskStatus(subtask.id, subtask.status)}
+                              className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                              title={isCompleted ? 'Mark as incomplete' : 'Mark as completed'}
+                            >
+                              {isCompleted ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              ) : (
+                                <Square className="w-4 h-4 text-slate-400" />
+                              )}
+                            </button>
 
-                          <span
-                            className={`font-semibold leading-snug break-words ${
-                              isCompleted ? 'line-through text-slate-400' : 'text-slate-800'
-                            }`}
-                          >
-                            {subtask.title}
-                          </span>
-                        </div>
-
-                        {/* Assignee, Due Date, and Delete Controls */}
-                        <div className="flex items-center space-x-2 shrink-0 pl-6 sm:pl-0">
-                          {/* Assignee Dropdown */}
-                          <select
-                            value={
-                              typeof subtask.assigned_to === 'object'
-                                ? subtask.assigned_to?.id || ''
-                                : subtask.assigned_to_id || subtask.assigned_to || ''
-                            }
-                            onChange={e =>
-                              handleUpdateSubtaskAssignee(
-                                subtask.id,
-                                e.target.value ? Number(e.target.value) : null
-                              )
-                            }
-                            className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 focus:outline-none cursor-pointer hover:bg-white"
-                          >
-                            <option value="">Unassigned</option>
-                            {users.map(u => (
-                              <option key={u.id} value={u.id}>
-                                {u.name}
-                              </option>
-                            ))}
-                          </select>
-
-                          {/* Due Date */}
-                          {subtask.due_date && (
-                            <span className="flex items-center space-x-1 text-[10px] text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>{subtask.due_date}</span>
+                            <span
+                              className={`font-semibold leading-snug break-words ${
+                                isCompleted ? 'line-through text-slate-400' : 'text-slate-800'
+                              }`}
+                            >
+                              {subtask.title}
                             </span>
-                          )}
+                          </div>
 
-                          {/* Delete Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSubtask(subtask.id, subtask.title)}
-                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                            title="Delete subtask"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Assignee, Due Date, Comments Toggle, and Delete Controls */}
+                          <div className="flex items-center space-x-2 shrink-0 pl-6 sm:pl-0 flex-wrap">
+                            {/* Assignee Dropdown */}
+                            <select
+                              value={
+                                typeof subtask.assigned_to === 'object'
+                                  ? subtask.assigned_to?.id || ''
+                                  : subtask.assigned_to_id || subtask.assigned_to || ''
+                              }
+                              onChange={e =>
+                                handleUpdateSubtaskAssignee(
+                                  subtask.id,
+                                  e.target.value ? Number(e.target.value) : null
+                                )
+                              }
+                              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 focus:outline-none cursor-pointer hover:bg-white"
+                            >
+                              <option value="">Unassigned</option>
+                              {users.map(u => (
+                                <option key={u.id} value={u.id}>
+                                  {u.name}
+                                </option>
+                              ))}
+                            </select>
+
+                            {/* Due Date */}
+                            {subtask.due_date && (
+                              <span className="flex items-center space-x-1 text-[10px] text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                <span>{subtask.due_date}</span>
+                              </span>
+                            )}
+
+                            {/* Subtask Discussion Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSubtaskComments(subtask.id)}
+                              className={`flex items-center space-x-1 px-2 py-1 rounded-lg border text-[11px] transition-colors cursor-pointer ${
+                                isCommentsOpen
+                                  ? 'bg-blue-600 text-white font-bold border-blue-600'
+                                  : commentsCount > 0
+                                  ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold'
+                                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100'
+                              }`}
+                              title="Subtask Discussion / Comments"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              <span>{commentsCount}</span>
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSubtask(subtask.id, subtask.title)}
+                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                              title="Delete subtask"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Collapsible Subtask Discussion Thread */}
+                        {isCommentsOpen && (
+                          <div className="mt-2 pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2.5 w-full">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                <span>Subtask Discussion</span>
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {(subtaskCommentsMap[subtask.id]?.length || 0)} comments
+                              </span>
+                            </div>
+
+                            {/* Comments List */}
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                              {loadingSubtaskCommentsMap[subtask.id] ? (
+                                <div className="py-4 flex justify-center">
+                                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                                </div>
+                              ) : (subtaskCommentsMap[subtask.id]?.length || 0) === 0 ? (
+                                <p className="text-[11px] text-slate-400 text-center py-2">
+                                  No comments on this subtask yet. Start below.
+                                </p>
+                              ) : (
+                                subtaskCommentsMap[subtask.id].map(c => (
+                                  <div key={c.id} className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-1.5">
+                                        {c.user?.avatar ? (
+                                          <img src={c.user.avatar} alt={c.user.name} className="w-4 h-4 rounded-full object-cover" />
+                                        ) : (
+                                          <div className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-[9px] flex items-center justify-center uppercase">
+                                            {c.user?.name ? c.user.name.charAt(0) : 'U'}
+                                          </div>
+                                        )}
+                                        <span className="font-bold text-slate-900 dark:text-white text-[11px]">{c.user?.name || 'User'}</span>
+                                        <span className="text-[9px] text-slate-500 font-medium">({c.user?.role || 'MEMBER'})</span>
+                                      </div>
+                                      <span className="text-[9px] text-slate-400 font-mono">{c.created_at}</span>
+                                    </div>
+                                    <p className="text-slate-700 dark:text-slate-200 text-[11px] leading-relaxed pl-5 break-words">
+                                      {renderCommentContent(c.comment)}
+                                    </p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+
+                            {/* Subtask Comment Input */}
+                            <div className="relative">
+                              {/* Subtask Mentions Popup */}
+                              {showSubtaskMentionSuggestions === subtask.id && filteredMentionUsers.length > 0 && (
+                                <div className="absolute bottom-full left-0 mb-1.5 w-64 max-h-44 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-1 space-y-1">
+                                  <div className="px-2 py-0.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                    <span>Mention Member</span>
+                                    <span className="font-mono text-[8px]">Tab / ↵</span>
+                                  </div>
+                                  {filteredMentionUsers.map((u, idx) => (
+                                    <button
+                                      key={u.id}
+                                      type="button"
+                                      onClick={() => insertSubtaskMention(subtask.id, u)}
+                                      className={`w-full flex items-center space-x-2 px-2 py-1 rounded-lg text-left transition-colors cursor-pointer ${
+                                        idx === subtaskMentionIndex
+                                          ? 'bg-blue-600 text-white font-bold'
+                                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                                      }`}
+                                    >
+                                      {u.avatar ? (
+                                        <img src={u.avatar} alt={u.name} className="w-4 h-4 rounded-full object-cover shrink-0" />
+                                      ) : (
+                                        <div className={`w-4 h-4 rounded-full font-bold text-[9px] flex items-center justify-center uppercase shrink-0 ${
+                                          idx === subtaskMentionIndex ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+                                        }`}>
+                                          {u.name ? u.name.charAt(0) : 'U'}
+                                        </div>
+                                      )}
+                                      <span className="text-[11px] font-bold truncate">{u.name}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+
+                              <form onSubmit={(e) => handlePostSubtaskComment(subtask.id, e)} className="flex items-center space-x-1.5">
+                                <div className="relative flex-1">
+                                  <input
+                                    type="text"
+                                    placeholder="Comment on this subtask... (@ to mention)"
+                                    value={subtaskCommentInputMap[subtask.id] || ''}
+                                    onChange={(e) => handleSubtaskCommentChange(subtask.id, e)}
+                                    onKeyDown={(e) => handleSubtaskCommentKeyDown(subtask.id, e)}
+                                    className="w-full pl-3 pr-7 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSubtaskCommentInputMap(prev => ({ ...prev, [subtask.id]: (prev[subtask.id] || '') + '@' }));
+                                      setSubtaskMentionQuery('');
+                                      setShowSubtaskMentionSuggestions(subtask.id);
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 cursor-pointer"
+                                    title="Mention member"
+                                  >
+                                    <AtSign className="w-3 h-3" />
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="submit"
+                                  disabled={!(subtaskCommentInputMap[subtask.id] || '').trim()}
+                                  className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0"
+                                >
+                                  <Send className="w-3 h-3" />
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })
@@ -1009,47 +1365,110 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                   </p>
                 ) : (
                   comments.map(c => (
-                    <div key={c.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                    <div key={c.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           {c.user?.avatar ? (
                             <img
                               src={c.user.avatar}
                               alt={c.user?.name}
-                              className="w-5 h-5 rounded-full object-cover border border-slate-200"
+                              className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                             />
                           ) : (
-                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center uppercase">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-[10px] flex items-center justify-center uppercase">
                               {c.user?.name ? c.user.name.charAt(0) : 'U'}
                             </div>
                           )}
-                          <span className="font-bold text-slate-900">{c.user?.name || 'User'}</span>
-                          <span className="text-[10px] text-slate-500 font-bold">({c.user?.role || 'MEMBER'})</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{c.user?.name || 'User'}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">({c.user?.role || 'MEMBER'})</span>
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono">{c.created_at}</span>
                       </div>
-                      <p className="text-slate-700 text-xs leading-relaxed pl-7">{c.comment}</p>
+                      <p className="text-slate-700 dark:text-slate-200 text-xs leading-relaxed pl-7 break-words">
+                        {renderCommentContent(c.comment)}
+                      </p>
                     </div>
                   ))
                 )}
               </div>
 
-              <form onSubmit={handlePostComment} className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  placeholder="Write a comment..."
-                  value={newCommentText}
-                  onChange={e => setNewCommentText(e.target.value)}
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
-                />
-                <button
-                  type="submit"
-                  disabled={!newCommentText.trim()}
-                  className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </form>
+              <div className="relative">
+                {/* Mentions Autocomplete Popup */}
+                {showMentionSuggestions && filteredMentionUsers.length > 0 && (
+                  <div className="absolute bottom-full left-0 mb-2 w-72 max-h-56 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-1.5 space-y-1">
+                    <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <span className="flex items-center space-x-1">
+                        <AtSign className="w-3 h-3 text-blue-500" />
+                        <span>Mention Team Member</span>
+                      </span>
+                      <span className="font-mono text-[9px]">Tab / ↵</span>
+                    </div>
+                    {filteredMentionUsers.map((u, idx) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => insertMention(u)}
+                        className={`w-full flex items-center space-x-2.5 px-2.5 py-1.5 rounded-xl text-left transition-colors cursor-pointer ${
+                          idx === mentionIndex
+                            ? 'bg-blue-600 text-white font-bold'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        {u.avatar ? (
+                          <img src={u.avatar} alt={u.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className={`w-5 h-5 rounded-full font-bold text-[10px] flex items-center justify-center uppercase shrink-0 ${
+                            idx === mentionIndex ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700 dark:bg-slate-700 dark:text-blue-300'
+                          }`}>
+                            {u.name ? u.name.charAt(0) : 'U'}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs truncate font-bold">{u.name}</p>
+                          <p className={`text-[10px] truncate ${idx === mentionIndex ? 'text-blue-100' : 'text-slate-400'}`}>
+                            @{u.username || u.name.toLowerCase().replace(/\s+/g, '')}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={handlePostComment} className="flex items-center space-x-2">
+                  <div className="relative flex-1">
+                    <input
+                      ref={commentInputRef}
+                      type="text"
+                      placeholder="Write a comment... (Type @ to mention team members)"
+                      value={newCommentText}
+                      onChange={handleCommentChange}
+                      onKeyDown={handleCommentKeyDown}
+                      className="w-full pl-3.5 pr-8 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewCommentText(prev => prev + '@');
+                        setMentionQuery('');
+                        setShowMentionSuggestions(true);
+                        setTimeout(() => commentInputRef.current?.focus(), 10);
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                      title="Mention a member"
+                    >
+                      <AtSign className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!newCommentText.trim()}
+                    className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </form>
+              </div>
             </div>
           )}
 

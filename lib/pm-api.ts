@@ -664,6 +664,25 @@ class PMClient {
       method: 'DELETE'
     });
   }
+
+  // ================= SUBTASKS & SUBTASK COMMENTS =================
+  public async createSubtask(taskId: number, data: Partial<PMSubtask>) {
+    return this.request<PMSubtask>(`/tasks/${taskId}/subtasks`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async getSubtaskComments(subtaskId: number) {
+    return this.request<PMComment[]>(`/subtasks/${subtaskId}/comments`);
+  }
+
+  public async addSubtaskComment(subtaskId: number, comment: string) {
+    return this.request<PMComment>(`/subtasks/${subtaskId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ comment })
+    });
+  }
 }
 
 export const pmApi = new PMClient();

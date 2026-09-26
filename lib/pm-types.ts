@@ -102,6 +102,7 @@ export interface PMSubtask {
   assigned_to?: PMUser | number | null;
   status: 'todo' | 'in_progress' | 'completed';
   due_date?: string | null;
+  comments_count?: number;
   created_by?: number | PMUser | null;
   user?: PMUser | null;
   created_at?: string;
@@ -111,6 +112,7 @@ export interface PMSubtask {
 export interface PMComment {
   id: number;
   task_id: number;
+  subtask_id?: number;
   user: PMUser | null;
   user_id: number;
   comment: string;

@@ -62,6 +62,8 @@ interface PMDataContextType {
   createSubtask: (taskId: number, data: Partial<PMSubtask>) => Promise<{ success: boolean; data?: PMSubtask; message?: string }>;
   updateSubtask: (subtaskId: number, data: Partial<PMSubtask>, taskId?: number) => Promise<{ success: boolean; data?: PMSubtask; message?: string }>;
   deleteSubtask: (subtaskId: number, taskId?: number) => Promise<{ success: boolean; message?: string }>;
+  getSubtaskComments: (subtaskId: number) => Promise<{ success: boolean; data?: PMComment[]; message?: string }>;
+  addSubtaskComment: (subtaskId: number, text: string) => Promise<{ success: boolean; data?: PMComment; message?: string }>;
   markNotificationRead: (id: number) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
 }
@@ -372,6 +374,22 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: false, message: res.message || 'Failed to delete subtask' };
   };
 
+  const getSubtaskComments = async (subtaskId: number) => {
+    const res = await pmApi.getSubtaskComments(subtaskId);
+    if (res.success && res.data) {
+      return { success: true, data: res.data };
+    }
+    return { success: false, message: res.message || 'Failed to fetch subtask comments' };
+  };
+
+  const addSubtaskComment = async (subtaskId: number, text: string) => {
+    const res = await pmApi.addSubtaskComment(subtaskId, text);
+    if (res.success && res.data) {
+      return { success: true, data: res.data };
+    }
+    return { success: false, message: res.message || 'Failed to add comment to subtask' };
+  };
+
   const markNotificationRead = async (id: number) => {
     await pmApi.markNotificationRead(id);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: 1 } : n));
@@ -429,6 +447,8 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         createSubtask,
         updateSubtask,
         deleteSubtask,
+        getSubtaskComments,
+        addSubtaskComment,
         markNotificationRead,
         markAllNotificationsRead
       }}
