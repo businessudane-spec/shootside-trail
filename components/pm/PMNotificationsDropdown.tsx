@@ -66,7 +66,7 @@ export const PMNotificationsDropdown: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden">
+        <div className="fixed left-2 right-2 top-16 sm:absolute sm:top-full sm:right-0 sm:left-auto sm:mt-2 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden">
           <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold text-slate-900 dark:text-slate-100">Notifications</span>
@@ -102,7 +102,7 @@ export const PMNotificationsDropdown: React.FC = () => {
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
                     className={`p-3 text-xs transition-colors flex items-start justify-between space-x-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
-                      n.is_read ? 'opacity-60 bg-white' : isMention ? 'bg-amber-50/60 dark:bg-amber-950/20' : 'bg-blue-50/40'
+                      n.is_read ? 'opacity-60 bg-white dark:bg-slate-900' : isMention ? 'bg-amber-50/60 dark:bg-amber-950/20' : 'bg-blue-50/40 dark:bg-blue-950/20'
                     }`}
                   >
                     <div className="flex items-start space-x-2.5 flex-1 min-w-0">
