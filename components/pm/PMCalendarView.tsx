@@ -45,7 +45,14 @@ export const PMCalendarView: React.FC<PMCalendarViewProps> = ({ onSelectTask, op
 
   const filteredTasks = tasks.filter(task => {
     if (selectedProjectId && task.project_id !== selectedProjectId) return false;
-    if (selectedStatus && task.status !== selectedStatus) return false;
+    if (selectedStatus === 'all_with_completed') {
+      // Include all statuses
+    } else if (selectedStatus) {
+      if (task.status !== selectedStatus) return false;
+    } else {
+      // Default: do not show completed tasks as due on calendar
+      if (task.status === 'Completed') return false;
+    }
     if (selectedPriority && task.priority !== selectedPriority) return false;
     return true;
   });

@@ -35,7 +35,7 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   onNavigateView
 }) => {
   const { user, isAdmin } = usePMAuth();
-  const { projects, tasks, users, statistics } = usePMData();
+  const { projects, tasks, users, statistics, setSelectedStatus, setSelectedPriority } = usePMData();
 
   const totalProjects = statistics?.projects.total ?? projects.length;
   const activeProjects = statistics?.projects.active ?? projects.filter(p => p.status === 'Active').length;
@@ -102,7 +102,11 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Unassigned Tasks */}
         <div
-          onClick={() => onNavigateView('tasks_list')}
+          onClick={() => {
+            setSelectedStatus('');
+            setSelectedPriority('');
+            onNavigateView('tasks_list');
+          }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
@@ -123,7 +127,11 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
         {/* Tasks in Progress */}
         <div
-          onClick={() => onNavigateView('tasks_list')}
+          onClick={() => {
+            setSelectedStatus('In Progress');
+            setSelectedPriority('');
+            onNavigateView('tasks_list');
+          }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
@@ -144,7 +152,11 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
 
         {/* Completed Tasks */}
         <div
-          onClick={() => onNavigateView('tasks_list')}
+          onClick={() => {
+            setSelectedStatus('Completed');
+            setSelectedPriority('');
+            onNavigateView('tasks_list');
+          }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">
@@ -160,14 +172,17 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 flex items-center space-x-1 font-semibold">
-            <span>High completion velocity</span>
-            <TrendingUp className="w-3 h-3" />
+            <span>Click to view all completed tasks</span>
+            <ArrowUpRight className="w-3 h-3" />
           </p>
         </div>
 
         {/* Overdue / Urgent Alert */}
         <div
-          onClick={() => onNavigateView('tasks_list')}
+          onClick={() => {
+            setSelectedPriority('Urgent');
+            onNavigateView('tasks_list');
+          }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-3">

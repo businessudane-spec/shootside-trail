@@ -54,7 +54,14 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
       (task.subtasks && task.subtasks.some(st => (typeof st.assigned_to === 'object' ? st.assigned_to?.id : st.assigned_to) === user?.id || st.assigned_to_id === user?.id));
     if (filterMyTasksOnly && !isAssignedToUser) return false;
     if (selectedProjectId && task.project_id !== selectedProjectId) return false;
-    if (selectedStatus && task.status !== selectedStatus) return false;
+    if (selectedStatus === 'all_with_completed') {
+      // Show all tasks including completed
+    } else if (selectedStatus) {
+      if (task.status !== selectedStatus) return false;
+    } else {
+      // Default: hide completed tasks from the active task list
+      if (task.status === 'Completed') return false;
+    }
     if (selectedPriority && task.priority !== selectedPriority) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -157,11 +164,12 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
             onChange={e => setSelectedStatus(e.target.value)}
             className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
           >
-            <option value="">All Statuses</option>
+            <option value="">Active Tasks (Default)</option>
+            <option value="all_with_completed">All Tasks (Inc. Completed)</option>
             <option value="To Do">To Do</option>
             <option value="In Progress">In Progress</option>
             <option value="Review">Review</option>
-            <option value="Completed">Completed</option>
+            <option value="Completed">Completed Only</option>
             <option value="On Hold">On Hold</option>
           </select>
 
