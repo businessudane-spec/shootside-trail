@@ -77,6 +77,7 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [attachments, setAttachments] = useState<PMAttachment[]>([]);
   const [taskActivities, setTaskActivities] = useState<PMActivityLog[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
+  const [isPostingComment, setIsPostingComment] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -99,6 +100,7 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [expandedSubtaskId, setExpandedSubtaskId] = useState<number | null>(null);
   const [subtaskCommentsMap, setSubtaskCommentsMap] = useState<Record<number, PMComment[]>>({});
   const [loadingSubtaskCommentsMap, setLoadingSubtaskCommentsMap] = useState<Record<number, boolean>>({});
+  const [isPostingSubtaskCommentMap, setIsPostingSubtaskCommentMap] = useState<Record<number, boolean>>({});
   const [subtaskCommentInputMap, setSubtaskCommentInputMap] = useState<Record<number, string>>({});
   const [subtaskMentionQuery, setSubtaskMentionQuery] = useState('');
   const [showSubtaskMentionSuggestions, setShowSubtaskMentionSuggestions] = useState<number | null>(null);
@@ -333,14 +335,45 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommentText.trim()) return;
+    const commentText = newCommentText.trim();
+    if (!commentText || isPostingComment) return;
 
+    // 1. Instantly clear input, close mention suggestions, lock against duplicate clicks
+    setNewCommentText('');
     setShowMentionSuggestions(false);
-    const res = await addComment(task.id, newCommentText.trim());
-    if (res.success && res.data) {
-      setComments(prev => [...prev, res.data!]);
-      setNewCommentText('');
-      await loadTaskExtras(task.id);
+    setIsPostingComment(true);
+
+    // 2. Optimistic instant UI update (0ms latency for user)
+    const tempId = Date.now();
+    const optimisticComment: PMComment = {
+      id: tempId,
+      task_id: task.id,
+      user_id: user?.id || 1,
+      user: user || null,
+      comment: commentText,
+      created_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      updated_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    };
+
+    setComments(prev => [...prev, optimisticComment]);
+
+    try {
+      const res = await addComment(task.id, commentText);
+      if (res.success && res.data) {
+        // Swap optimistic placeholder with confirmed server object
+        setComments(prev => prev.map(c => c.id === tempId ? res.data! : c));
+      } else {
+        // Rollback on error
+        setComments(prev => prev.filter(c => c.id !== tempId));
+        setNewCommentText(commentText);
+        setErrorMessage(res.message || 'Failed to save comment.');
+      }
+    } catch (err: any) {
+      setComments(prev => prev.filter(c => c.id !== tempId));
+      setNewCommentText(commentText);
+      setErrorMessage(err?.message || 'Error saving comment.');
+    } finally {
+      setIsPostingComment(false);
     }
   };
 
@@ -428,23 +461,62 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const handlePostSubtaskComment = async (subtaskId: number, e: React.FormEvent) => {
     e.preventDefault();
     const commentText = (subtaskCommentInputMap[subtaskId] || '').trim();
-    if (!commentText) return;
+    if (!commentText || isPostingSubtaskCommentMap[subtaskId]) return;
 
+    // 1. Instantly clear input, close suggestions, lock subtask button
+    setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: '' }));
     setShowSubtaskMentionSuggestions(null);
-    const res = await addSubtaskComment(subtaskId, commentText);
-    if (res.success && res.data) {
+    setIsPostingSubtaskCommentMap(prev => ({ ...prev, [subtaskId]: true }));
+
+    // 2. Optimistic instant UI update (0ms)
+    const tempId = Date.now();
+    const optimisticComment: PMComment = {
+      id: tempId,
+      task_id: subtaskId,
+      user_id: user?.id || 1,
+      user: user || null,
+      comment: commentText,
+      created_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      updated_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    };
+
+    setSubtaskCommentsMap(prev => ({
+      ...prev,
+      [subtaskId]: [...(prev[subtaskId] || []), optimisticComment]
+    }));
+
+    setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
+      ...st,
+      comments_count: (st.comments_count || 0) + 1
+    } : st));
+
+    try {
+      const res = await addSubtaskComment(subtaskId, commentText);
+      if (res.success && res.data) {
+        setSubtaskCommentsMap(prev => ({
+          ...prev,
+          [subtaskId]: (prev[subtaskId] || []).map(c => c.id === tempId ? res.data! : c)
+        }));
+      } else {
+        // Rollback on error
+        setSubtaskCommentsMap(prev => ({
+          ...prev,
+          [subtaskId]: (prev[subtaskId] || []).filter(c => c.id !== tempId)
+        }));
+        setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: commentText }));
+        setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
+          ...st,
+          comments_count: Math.max(0, (st.comments_count || 1) - 1)
+        } : st));
+      }
+    } catch (err: any) {
       setSubtaskCommentsMap(prev => ({
         ...prev,
-        [subtaskId]: [...(prev[subtaskId] || []), res.data!]
+        [subtaskId]: (prev[subtaskId] || []).filter(c => c.id !== tempId)
       }));
-      setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: '' }));
-
-      setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
-        ...st,
-        comments_count: (st.comments_count || 0) + 1
-      } : st));
-
-      await loadTaskExtras(task.id);
+      setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: commentText }));
+    } finally {
+      setIsPostingSubtaskCommentMap(prev => ({ ...prev, [subtaskId]: false }));
     }
   };
 
@@ -1265,10 +1337,10 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
 
                                 <button
                                   type="submit"
-                                  disabled={!(subtaskCommentInputMap[subtask.id] || '').trim()}
-                                  className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0"
+                                  disabled={isPostingSubtaskCommentMap[subtask.id] || !(subtaskCommentInputMap[subtask.id] || '').trim()}
+                                  className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0 flex items-center justify-center min-w-[28px]"
                                 >
-                                  <Send className="w-3 h-3" />
+                                  {isPostingSubtaskCommentMap[subtask.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                                 </button>
                               </form>
                             </div>
@@ -1473,10 +1545,10 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
 
                   <button
                     type="submit"
-                    disabled={!newCommentText.trim()}
-                    className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0"
+                    disabled={isPostingComment || !newCommentText.trim()}
+                    className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer disabled:opacity-40 transition-all shadow-xs shrink-0 flex items-center justify-center min-w-[36px]"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    {isPostingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   </button>
                 </form>
               </div>

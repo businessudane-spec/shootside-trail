@@ -254,8 +254,15 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addComment = async (taskId: number, text: string) => {
     const res = await pmApi.addTaskComment(taskId, text);
-    if (res.success) {
-      await refreshAll();
+    if (res.success && res.data) {
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, comments_count: (t.comments_count || 0) + 1 } : t));
+      // Background non-blocking sync for stats and notifications
+      pmApi.getNotifications().then(nRes => {
+        if (nRes.success && nRes.data) {
+          setNotifications(nRes.data.items || []);
+          setUnreadNotificationsCount(nRes.data.unread_count || 0);
+        }
+      });
       return { success: true, data: res.data };
     }
     return { success: false, message: res.message || 'Failed to post comment' };
