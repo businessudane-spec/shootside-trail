@@ -32,12 +32,16 @@ import {
   CheckSquare,
   Square,
   ListTodo,
-  AtSign
+  AtSign,
+  GitMerge,
+  ExternalLink as LinkIcon,
+  Layers
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
 import { PMUser, PMTask, PMComment, PMAttachment, PMActivityLog, PMSubtask, TaskStatus, PriorityLevel, normalizeTaskStatus, normalizePriority } from '@/lib/pm-types';
 import { pmApi } from '@/lib/pm-api';
+import { PMMergeTaskModal } from './PMMergeTaskModal';
 
 interface PMTaskDetailDrawerProps {
   task: PMTask;
@@ -47,9 +51,12 @@ interface PMTaskDetailDrawerProps {
 export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, onClose }) => {
   const { user, isAdmin } = usePMAuth();
   const { 
+    tasks,
     users, 
     updateTask, 
     deleteTask, 
+    unmergeTask,
+    setSelectedTask,
     addComment, 
     deleteComment,
     uploadAttachment, 
@@ -72,11 +79,19 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [actualHours, setActualHours] = useState(task.actual_hours);
   const [progress, setProgress] = useState(task.progress);
 
-  const [activeTab, setActiveTab] = useState<'comments' | 'attachments' | 'subtasks' | 'audit'>('comments');
+  const [activeTab, setActiveTab] = useState<'comments' | 'attachments' | 'subtasks' | 'merged' | 'audit'>('comments');
   const [subtasks, setSubtasks] = useState<PMSubtask[]>([]);
   const [comments, setComments] = useState<PMComment[]>([]);
   const [attachments, setAttachments] = useState<PMAttachment[]>([]);
   const [taskActivities, setTaskActivities] = useState<PMActivityLog[]>([]);
+  const [childTasks, setChildTasks] = useState<PMTask[]>(task.child_tasks || []);
+  const [childCommentsMap, setChildCommentsMap] = useState<Record<number, PMComment[]>>({});
+  const [expandedChildTaskId, setExpandedChildTaskId] = useState<number | null>(null);
+  const [loadingChildComments, setLoadingChildComments] = useState<Record<number, boolean>>({});
+
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isUnmerging, setIsUnmerging] = useState(false);
+
   const [newCommentText, setNewCommentText] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -128,25 +143,85 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
     setEstimatedHours(task.estimated_hours);
     setActualHours(task.actual_hours);
     setProgress(task.progress);
+    setChildTasks(task.child_tasks || []);
 
     loadTaskExtras(task.id);
   }, [task]);
 
   const loadTaskExtras = async (taskId: number) => {
     try {
-      const [sRes, cRes, aRes, actRes] = await Promise.all([
+      const [sRes, cRes, aRes, actRes, tRes] = await Promise.all([
         pmApi.getTaskSubtasks(taskId),
         pmApi.getTaskComments(taskId),
         pmApi.getTaskAttachments(taskId),
-        pmApi.getTaskActivity(taskId)
+        pmApi.getTaskActivity(taskId),
+        pmApi.getTask(taskId)
       ]);
 
       if (sRes.success && sRes.data) setSubtasks(sRes.data);
       if (cRes.success && cRes.data) setComments(cRes.data);
       if (aRes.success && aRes.data) setAttachments(aRes.data);
       if (actRes.success && actRes.data) setTaskActivities(actRes.data as PMActivityLog[]);
+      if (tRes.success && tRes.data?.child_tasks) setChildTasks(tRes.data.child_tasks);
     } catch (err) {
       console.error('Error loading task extras:', err);
+    }
+  };
+
+  const handleToggleChildComments = async (childTaskId: number) => {
+    if (expandedChildTaskId === childTaskId) {
+      setExpandedChildTaskId(null);
+      return;
+    }
+    setExpandedChildTaskId(childTaskId);
+    if (!childCommentsMap[childTaskId]) {
+      setLoadingChildComments(prev => ({ ...prev, [childTaskId]: true }));
+      try {
+        const res = await pmApi.getTaskComments(childTaskId);
+        if (res.success && res.data) {
+          setChildCommentsMap(prev => ({ ...prev, [childTaskId]: res.data! }));
+        }
+      } finally {
+        setLoadingChildComments(prev => ({ ...prev, [childTaskId]: false }));
+      }
+    }
+  };
+
+  const handleUnmergeChildTask = async (childTaskId: number, childTitle: string) => {
+    if (!confirm(`Unmerge "${childTitle}" from this task? It will return to being a standalone task.`)) return;
+    setIsUnmerging(true);
+    const res = await unmergeTask(childTaskId);
+    setIsUnmerging(false);
+    if (res.success) {
+      setChildTasks(prev => prev.filter(c => c.id !== childTaskId));
+      await loadTaskExtras(task.id);
+    } else {
+      setErrorMessage(res.message || 'Failed to unmerge task');
+    }
+  };
+
+  const handleUnmergeSelf = async () => {
+    if (!confirm(`Unmerge this task from parent #${task.parent_task_id}? It will return to being a standalone task.`)) return;
+    setIsUnmerging(true);
+    const res = await unmergeTask(task.id);
+    setIsUnmerging(false);
+    if (res.success) {
+      await loadTaskExtras(task.id);
+    } else {
+      setErrorMessage(res.message || 'Failed to unmerge task');
+    }
+  };
+
+  const handleOpenParentTask = (parentId: number) => {
+    const parent = tasks.find(t => t.id === parentId);
+    if (parent) {
+      setSelectedTask(parent);
+    } else {
+      pmApi.getTask(parentId).then(res => {
+        if (res.success && res.data) {
+          setSelectedTask(res.data);
+        }
+      });
     }
   };
 
@@ -902,16 +977,66 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setIsMergeModalOpen(true)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800/80 transition-all cursor-pointer shadow-2xs"
+              title="Merge with another task"
+            >
+              <GitMerge className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Merge Task</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Main Drawer Scrollable Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+          {/* Parent Task Banner if this task is a merged child */}
+          {task.parent_task_id && Number(task.parent_task_id) > 0 && (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/40 border border-purple-200 dark:border-purple-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <GitMerge className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                    Merged Child Task
+                  </div>
+                  <div className="text-xs font-semibold text-slate-900 dark:text-white">
+                    Merged into primary task <span className="font-mono font-bold text-purple-600 dark:text-purple-400">#{task.parent_task_id}</span>
+                    {task.parent_task_title && ` • ${task.parent_task_title}`}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleOpenParentTask(Number(task.parent_task_id))}
+                  className="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs flex items-center space-x-1 cursor-pointer"
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <span>View Parent</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isUnmerging}
+                  onClick={handleUnmergeSelf}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-700 dark:text-slate-300 hover:text-rose-600 border border-slate-200 dark:border-slate-700 hover:border-rose-200 text-xs font-bold transition-all cursor-pointer"
+                >
+                  <span>{isUnmerging ? 'Unmerging...' : 'Unmerge'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {errorMessage && (
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2 font-medium">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -994,18 +1119,11 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-indigo-900 bg-indigo-50/40 focus:outline-none focus:border-indigo-500"
               >
                 <option value="0">-- Unassigned --</option>
-                {users
-                  .filter(u => {
-                    const uRole = (u.role || '').toLowerCase();
-                    const uName = (u.name || '').toLowerCase();
-                    const uLogin = (u.username || '').toLowerCase();
-                    return uRole !== 'admin' && uRole !== 'administrator' && uName !== 'shootside' && uLogin !== 'shootside';
-                  })
-                  .map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.name || u.username} ({u.role || 'Member'})
-                    </option>
-                  ))}
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name || u.username} {u.role ? `(${u.role})` : ''}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -1117,6 +1235,18 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
               <span>
                 Subtasks ({subtasks.filter(s => s.status === 'completed').length}/{subtasks.length})
               </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('merged')}
+              className={`pb-2 text-xs font-bold transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                activeTab === 'merged'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <GitMerge className="w-3.5 h-3.5" />
+              <span>Merged Tasks ({childTasks.length})</span>
             </button>
 
             <button
@@ -1795,6 +1925,191 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
             </div>
           )}
 
+          {/* 4. Merged Child Tasks Tab */}
+          {activeTab === 'merged' && (
+            <div className="space-y-4">
+              {/* Action bar / Top Info */}
+              <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 rounded-xl border border-blue-200 dark:border-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <GitMerge className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    Merged Child Tasks ({childTasks.length})
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Tasks merged under this primary task. All comments and details remain accessible.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMergeModalOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-xs cursor-pointer shrink-0 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Merge Another Task</span>
+                </button>
+              </div>
+
+              {/* Child Tasks List */}
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+                {childTasks.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400 font-medium bg-slate-50/60 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                    <GitMerge className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">No tasks merged into this task yet.</p>
+                    <p className="text-[11px] text-slate-500">
+                      Have duplicate or related tasks? Merge them to view all subtasks, discussions, and updates in one primary task.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsMergeModalOpen(true)}
+                      className="mt-2 inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Merge a Task Now</span>
+                    </button>
+                  </div>
+                ) : (
+                  childTasks.map(child => {
+                    const isExpanded = expandedChildTaskId === child.id;
+                    const childComments = childCommentsMap[child.id] || [];
+                    const isLoadingComments = loadingChildComments[child.id] || false;
+
+                    return (
+                      <div
+                        key={child.id}
+                        className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-2.5 text-xs"
+                      >
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
+                              #{child.id}
+                            </span>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                              child.priority === 'Urgent'
+                                ? 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30'
+                                : child.priority === 'High'
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                : child.priority === 'Low'
+                                ? 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30'
+                                : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                            }`}>
+                              {child.priority}
+                            </span>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                              child.status === 'Completed'
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                : 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/30'
+                            }`}>
+                              {child.status}
+                            </span>
+                            <span className="font-semibold text-slate-900 dark:text-white truncate">
+                              {child.title}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-1.5 shrink-0 self-end sm:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleChildComments(child.id)}
+                              className={`flex items-center space-x-1 px-2 py-1 rounded-lg border text-[11px] transition-all cursor-pointer ${
+                                isExpanded
+                                  ? 'bg-blue-600 text-white font-bold border-blue-600'
+                                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-blue-600'
+                              }`}
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              <span>Comments ({child.comments_count || 0})</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenParentTask(child.id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              title="Open task in drawer"
+                            >
+                              <LinkIcon className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={isUnmerging}
+                              onClick={() => handleUnmergeChildTask(child.id, child.title)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                              title="Unmerge from this parent task"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        {child.description && (
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 bg-slate-50 dark:bg-slate-950/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                            {child.description}
+                          </p>
+                        )}
+
+                        {/* Assignee and Date details */}
+                        <div className="flex items-center gap-4 text-[10px] text-slate-400">
+                          {child.assigned_to && (
+                            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium">
+                              <User className="w-3 h-3 text-slate-400" />
+                              {typeof child.assigned_to === 'object' ? child.assigned_to?.name : `User #${child.assigned_to}`}
+                            </span>
+                          )}
+                          {child.due_date && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Due: {child.due_date}
+                            </span>
+                          )}
+                          <span>Created: {child.created_at?.substring(0, 10)}</span>
+                        </div>
+
+                        {/* Expanded Child Comments */}
+                        {isExpanded && (
+                          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2 animate-in fade-in duration-150">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              Discussions on Child Task #{child.id}
+                            </div>
+                            {isLoadingComments ? (
+                              <div className="p-3 text-center text-slate-400 text-xs">
+                                Loading comments...
+                              </div>
+                            ) : childComments.length === 0 ? (
+                              <div className="p-3 text-center text-slate-400 text-xs bg-slate-50/50 dark:bg-slate-950/30 rounded-lg">
+                                No comments recorded on this child task.
+                              </div>
+                            ) : (
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {childComments.map(c => (
+                                  <div
+                                    key={c.id}
+                                    className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-[11px]"
+                                  >
+                                    <div className="flex items-center justify-between text-slate-500 mb-1">
+                                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                                        {c.user?.name || `User #${c.user_id}`}
+                                      </span>
+                                      <span className="text-[9px]">{c.created_at?.substring(0, 16)}</span>
+                                    </div>
+                                    <div className="text-slate-800 dark:text-slate-200">
+                                      {c.comment}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 3. Audit Trail - Small line layout with full details */}
           {activeTab === 'audit' && (
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -1933,6 +2248,17 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
           </div>
         </div>
       )}
+
+      {/* PMMergeTaskModal */}
+      <PMMergeTaskModal
+        currentTask={task}
+        isOpen={isMergeModalOpen}
+        onClose={() => setIsMergeModalOpen(false)}
+        onMerged={async () => {
+          await loadTaskExtras(task.id);
+          setActiveTab('merged');
+        }}
+      />
     </div>
   );
 };

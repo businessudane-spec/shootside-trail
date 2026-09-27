@@ -84,6 +84,16 @@ export interface PMTask {
   estimated_hours: number;
   actual_hours: number;
   progress: number;
+  parent_task_id?: number | null;
+  parent_task?: {
+    id: number;
+    title: string;
+    status: TaskStatus;
+    priority: PriorityLevel;
+  } | null;
+  parent_task_title?: string | null;
+  child_tasks?: PMTask[];
+  child_tasks_count?: number;
   comments_count: number;
   attachments_count: number;
   subtasks_count?: number;

@@ -25,16 +25,7 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  const assignableMembers = users.filter(
-    u => u.username.toLowerCase() !== 'shootside' && u.id !== 1
-  );
-
-  const [assignedToId, setAssignedToId] = useState<number>(() => {
-    if (user && user.username.toLowerCase() !== 'shootside') {
-      return user.id;
-    }
-    return assignableMembers[0]?.id ?? 2;
-  });
+  const [assignedToId, setAssignedToId] = useState<number>(0);
 
   const [priority, setPriority] = useState<PriorityLevel>('Medium');
   const [status, setStatus] = useState<TaskStatus>('To Do');
@@ -58,7 +49,7 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
     setError(null);
 
     const activeProjectId = Number(projectId) || (projects.length > 0 ? projects[0].id : 1);
-    const targetAssigneeId = Number(assignedToId) || (assignableMembers[0]?.id ?? 2);
+    const targetAssigneeId = Number(assignedToId) || 0;
 
     const res = await createTask({
       project_id: activeProjectId,
@@ -93,9 +84,9 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
               <Plus className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">Create & Assign Task</h2>
+              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">Create Task</h2>
               <p className="text-[11px] text-slate-500 font-medium">
-                Assign deliverables directly to any team member
+                Create a new deliverable (can be unassigned or assigned to a team member)
               </p>
             </div>
           </div>
@@ -131,16 +122,16 @@ export const PMCreateTaskModal: React.FC<PMCreateTaskModalProps> = ({
 
           {/* Assign to Member */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Assign To Team Member *</label>
+            <label className="text-xs font-bold text-slate-700">Assign To Team Member (Optional)</label>
             <select
               value={assignedToId}
               onChange={e => setAssignedToId(Number(e.target.value))}
-              required
               className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             >
-              {assignableMembers.map(u => (
+              <option value="0">-- Unassigned (Assign Later) --</option>
+              {users.map(u => (
                 <option key={u.id} value={u.id}>
-                  {u.name} (@{u.username}) — {u.email}
+                  {u.name} (@{u.username}) {u.role ? `• ${u.role}` : ''}
                 </option>
               ))}
             </select>

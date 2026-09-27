@@ -12,7 +12,8 @@ import {
   Rows,
   Layers,
   Sparkles,
-  CheckSquare
+  CheckSquare,
+  GitMerge
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
@@ -49,6 +50,12 @@ export const PMKanbanBoard: React.FC<PMKanbanBoardProps> = ({ onSelectTask, open
       if (!matchTitle && !matchDesc && !matchProj) return false;
     }
     return true;
+  });
+
+  const sortedFilteredTasks = [...filteredTasks].sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : a.id;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : b.id;
+    return timeB - timeA;
   });
 
   const handleStatusChange = async (e: React.MouseEvent, taskId: number, newStatus: TaskStatus) => {
@@ -203,7 +210,7 @@ export const PMKanbanBoard: React.FC<PMKanbanBoardProps> = ({ onSelectTask, open
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {displayedColumns.map(col => {
-            const colTasks = filteredTasks.filter(t => t.status === col.status);
+            const colTasks = sortedFilteredTasks.filter(t => t.status === col.status);
             return (
               <div
                 key={col.status}
@@ -239,7 +246,7 @@ export const PMKanbanBoard: React.FC<PMKanbanBoardProps> = ({ onSelectTask, open
         /* STACKED / COME DOWN GRID VIEW: Wraps neatly into responsive grid / vertical sections */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 w-full">
           {displayedColumns.map(col => {
-            const colTasks = filteredTasks.filter(t => t.status === col.status);
+            const colTasks = sortedFilteredTasks.filter(t => t.status === col.status);
             return (
               <div
                 key={col.status}
@@ -329,13 +336,29 @@ function renderTaskCard(
         </div>
       </div>
 
-      {/* Subtasks Count indicator if any */}
-      {(task.subtasks_count !== undefined && task.subtasks_count > 0) && (
-        <div className="flex items-center space-x-1 text-[10px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 w-fit">
-          <CheckSquare className="w-3 h-3 text-blue-600" />
-          <span>{task.subtasks_completed_count || 0}/{task.subtasks_count} Subtasks</span>
-        </div>
-      )}
+      {/* Subtasks Count / Merged indicator if any */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {(task.subtasks_count !== undefined && task.subtasks_count > 0) && (
+          <div className="flex items-center space-x-1 text-[10px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+            <CheckSquare className="w-3 h-3 text-blue-600" />
+            <span>{task.subtasks_completed_count || 0}/{task.subtasks_count} Subtasks</span>
+          </div>
+        )}
+
+        {task.parent_task_id && Number(task.parent_task_id) > 0 && (
+          <div className="flex items-center space-x-1 text-[9px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+            <GitMerge className="w-3 h-3 text-purple-600" />
+            <span>Child of #{task.parent_task_id}</span>
+          </div>
+        )}
+
+        {task.child_tasks && task.child_tasks.length > 0 && (
+          <div className="flex items-center space-x-1 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+            <GitMerge className="w-3 h-3 text-indigo-600" />
+            <span>{task.child_tasks.length} Merged</span>
+          </div>
+        )}
+      </div>
 
       {/* Assignee & Due Date Footer */}
       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">

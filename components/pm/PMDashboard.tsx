@@ -48,7 +48,13 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   const overdueTasks = statistics?.tasks.overdue ?? tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'Completed').length;
   const unassignedTasks = tasks.filter(t => (!t.assigned_to_id || t.assigned_to_id === 0) && t.status !== 'Completed').length;
 
-  const myTasks = tasks.filter(t => t.assigned_to_id === user?.id && t.status !== 'Completed');
+  const myTasks = [...tasks]
+    .filter(t => t.assigned_to_id === user?.id && t.status !== 'Completed')
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : a.id;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : b.id;
+      return timeB - timeA;
+    });
 
   return (
     <div className="space-y-6">

@@ -45,8 +45,8 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
     setSelectedProjectId
   } = usePMData();
 
-  const [sortBy, setSortBy] = useState<'due_date' | 'priority' | 'progress' | 'created_at'>('priority');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState<'due_date' | 'priority' | 'progress' | 'created_at'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const filteredTasks = tasks.filter(task => {
     const isAssignedToUser = 
@@ -219,6 +219,16 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
                             <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                               {task.title}
                             </p>
+                            {task.parent_task_id && Number(task.parent_task_id) > 0 && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                                🔗 Child of #{task.parent_task_id}
+                              </span>
+                            )}
+                            {task.child_tasks && task.child_tasks.length > 0 && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                🔀 {task.child_tasks.length} Merged
+                              </span>
+                            )}
                             {user && task.assigned_to_id !== user.id && task.subtasks && task.subtasks.some(st => (typeof st.assigned_to === 'object' ? st.assigned_to?.id : st.assigned_to) === user.id || st.assigned_to_id === user.id) && (
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                                 Subtask assigned to you

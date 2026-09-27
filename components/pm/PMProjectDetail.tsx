@@ -29,7 +29,13 @@ export const PMProjectDetail: React.FC<PMProjectDetailProps> = ({
   const { tasks, activityLogs, deleteProject } = usePMData();
   const [activeTab, setActiveTab] = useState<'tasks' | 'overview' | 'activity'>('tasks');
 
-  const projectTasks = tasks.filter(t => t.project_id === project.id);
+  const projectTasks = [...tasks]
+    .filter(t => t.project_id === project.id)
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : a.id;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : b.id;
+      return timeB - timeA;
+    });
   const projectActivities = activityLogs.filter(a => a.entity_type === 'project' && a.entity_id === project.id);
 
   const handleDelete = async () => {

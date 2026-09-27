@@ -432,6 +432,68 @@ class PMClient {
       };
     }
 
+    if (endpoint.match(/\/tasks\/\d+\/merge/) && method === 'POST') {
+      const match = endpoint.match(/\/tasks\/(\d+)\/merge/);
+      const primaryId = match ? Number(match[1]) : 0;
+      const body = options.body ? JSON.parse(options.body as string) : {};
+      const childIds: number[] = body.child_task_ids || (body.child_task_id ? [body.child_task_id] : []);
+      
+      const primaryTask = mockTasks.find(t => t.id === primaryId);
+      if (primaryTask) {
+        mockTasks = mockTasks.map(t => {
+          if (childIds.includes(t.id)) {
+            return {
+              ...t,
+              parent_task_id: primaryId,
+              parent_task_title: primaryTask.title,
+              parent_task: {
+                id: primaryTask.id,
+                title: primaryTask.title,
+                status: primaryTask.status,
+                priority: primaryTask.priority
+              },
+              status: body.close_child_tasks ? 'Completed' : t.status
+            };
+          }
+          return t;
+        });
+
+        const children = mockTasks.filter(t => t.parent_task_id === primaryId);
+        const updatedPrimary: PMTask = {
+          ...primaryTask,
+          child_tasks: children,
+          child_tasks_count: children.length
+        };
+        mockTasks = mockTasks.map(t => t.id === primaryId ? updatedPrimary : t);
+        return { success: true, data: updatedPrimary as any, message: 'Task(s) merged successfully' };
+      }
+    }
+
+    if (endpoint.match(/\/tasks\/\d+\/unmerge/) && method === 'POST') {
+      const match = endpoint.match(/\/tasks\/(\d+)\/unmerge/);
+      const taskId = match ? Number(match[1]) : 0;
+      const task = mockTasks.find(t => t.id === taskId);
+      if (task) {
+        const oldParentId = task.parent_task_id;
+        const updatedTask: PMTask = {
+          ...task,
+          parent_task_id: null,
+          parent_task: null,
+          parent_task_title: null
+        };
+        mockTasks = mockTasks.map(t => t.id === taskId ? updatedTask : t);
+        if (oldParentId) {
+          const remainingChildren = mockTasks.filter(t => t.parent_task_id === oldParentId);
+          mockTasks = mockTasks.map(t => t.id === oldParentId ? {
+            ...t,
+            child_tasks: remainingChildren,
+            child_tasks_count: remainingChildren.length
+          } : t);
+        }
+        return { success: true, data: updatedTask as any, message: 'Task unmerged successfully' };
+      }
+    }
+
     if (endpoint === '/admin/statistics') {
       return {
         success: true,
@@ -547,6 +609,22 @@ class PMClient {
 
   public async deleteTask(id: number) {
     return this.request(`/tasks/${id}`, { method: 'DELETE' });
+  }
+
+  public async mergeTasks(primaryTaskId: number, childTaskIds: number[], options?: { closeChildTasks?: boolean }) {
+    return this.request<PMTask>(`/tasks/${primaryTaskId}/merge`, {
+      method: 'POST',
+      body: JSON.stringify({
+        child_task_ids: childTaskIds,
+        close_child_tasks: options?.closeChildTasks ?? false
+      })
+    });
+  }
+
+  public async unmergeTask(childTaskId: number) {
+    return this.request<PMTask>(`/tasks/${childTaskId}/unmerge`, {
+      method: 'POST'
+    });
   }
 
   public async getTaskComments(taskId: number) {

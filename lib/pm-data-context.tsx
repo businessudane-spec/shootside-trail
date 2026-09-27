@@ -53,6 +53,8 @@ interface PMDataContextType {
   updateTask: (id: number, data: Partial<PMTask>) => Promise<{ success: boolean; message?: string }>;
   deleteTask: (id: number) => Promise<{ success: boolean; message?: string }>;
   restoreTask: (id: number) => Promise<{ success: boolean; message?: string }>;
+  mergeTasks: (primaryTaskId: number, childTaskIds: number[], options?: { closeChildTasks?: boolean }) => Promise<{ success: boolean; data?: PMTask; message?: string }>;
+  unmergeTask: (childTaskId: number) => Promise<{ success: boolean; data?: PMTask; message?: string }>;
   addComment: (taskId: number, text: string) => Promise<{ success: boolean; data?: PMComment; message?: string }>;
   deleteComment: (commentId: number, taskId?: number, subtaskId?: number) => Promise<{ success: boolean; message?: string }>;
   uploadAttachment: (taskId: number, fileData: { file_name: string; file_type: string; file_base64: string }) => Promise<{ success: boolean; data?: PMAttachment; message?: string }>;
@@ -251,6 +253,48 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: true };
     }
     return { success: false, message: res.message || 'Failed to restore task' };
+  };
+
+  const mergeTasks = async (primaryTaskId: number, childTaskIds: number[], options?: { closeChildTasks?: boolean }) => {
+    const res = await pmApi.mergeTasks(primaryTaskId, childTaskIds, options);
+    if (res.success) {
+      await refreshAll();
+      if (selectedTask?.id === primaryTaskId && res.data) {
+        setSelectedTask({
+          ...res.data,
+          status: normalizeTaskStatus(res.data.status),
+          priority: normalizePriority(res.data.priority)
+        });
+      } else if (selectedTask && childTaskIds.includes(selectedTask.id)) {
+        // Refresh the selected child task if it's currently open
+        const updated = await pmApi.getTask(selectedTask.id);
+        if (updated.success && updated.data) {
+          setSelectedTask({
+            ...updated.data,
+            status: normalizeTaskStatus(updated.data.status),
+            priority: normalizePriority(updated.data.priority)
+          });
+        }
+      }
+      return { success: true, data: res.data };
+    }
+    return { success: false, message: res.message || 'Failed to merge tasks' };
+  };
+
+  const unmergeTask = async (childTaskId: number) => {
+    const res = await pmApi.unmergeTask(childTaskId);
+    if (res.success) {
+      await refreshAll();
+      if (selectedTask?.id === childTaskId && res.data) {
+        setSelectedTask({
+          ...res.data,
+          status: normalizeTaskStatus(res.data.status),
+          priority: normalizePriority(res.data.priority)
+        });
+      }
+      return { success: true, data: res.data };
+    }
+    return { success: false, message: res.message || 'Failed to unmerge task' };
   };
 
   const addComment = async (taskId: number, text: string) => {
@@ -457,6 +501,8 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateTask,
         deleteTask,
         restoreTask,
+        mergeTasks,
+        unmergeTask,
         addComment,
         deleteComment,
         uploadAttachment,
