@@ -54,6 +54,7 @@ interface PMDataContextType {
   deleteTask: (id: number) => Promise<{ success: boolean; message?: string }>;
   restoreTask: (id: number) => Promise<{ success: boolean; message?: string }>;
   addComment: (taskId: number, text: string) => Promise<{ success: boolean; data?: PMComment; message?: string }>;
+  deleteComment: (commentId: number, taskId?: number, subtaskId?: number) => Promise<{ success: boolean; message?: string }>;
   uploadAttachment: (taskId: number, fileData: { file_name: string; file_type: string; file_base64: string }) => Promise<{ success: boolean; data?: PMAttachment; message?: string }>;
   deleteAttachment: (taskId: number, attachmentId: number) => Promise<{ success: boolean; message?: string }>;
   createVaultItem: (data: Partial<PMVaultItem>) => Promise<{ success: boolean; message?: string }>;
@@ -268,6 +269,17 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: false, message: res.message || 'Failed to post comment' };
   };
 
+  const deleteComment = async (commentId: number, taskId?: number, subtaskId?: number) => {
+    const res = await pmApi.deleteComment(commentId);
+    if (res.success) {
+      if (taskId) {
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, comments_count: Math.max(0, (t.comments_count || 1) - 1) } : t));
+      }
+      return { success: true };
+    }
+    return { success: false, message: res.message || 'Failed to delete comment' };
+  };
+
   const uploadAttachment = async (taskId: number, fileData: { file_name: string; file_type: string; file_base64: string }) => {
     const res = await pmApi.uploadTaskAttachment(taskId, fileData);
     if (res.success && res.data) {
@@ -446,6 +458,7 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteTask,
         restoreTask,
         addComment,
+        deleteComment,
         uploadAttachment,
         deleteAttachment,
         createVaultItem,

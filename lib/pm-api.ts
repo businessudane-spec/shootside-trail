@@ -560,6 +560,18 @@ class PMClient {
     });
   }
 
+  public async deleteTaskComment(taskId: number, commentId: number) {
+    return this.request<{ success: boolean }>(`/tasks/${taskId}/comments/${commentId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  public async deleteComment(commentId: number) {
+    return this.request<{ success: boolean }>(`/comments/${commentId}`, {
+      method: 'DELETE'
+    });
+  }
+
   public async getTaskAttachments(taskId: number) {
     return this.request<PMAttachment[]>(`/tasks/${taskId}/attachments`);
   }

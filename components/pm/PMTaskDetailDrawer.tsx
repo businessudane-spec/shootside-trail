@@ -51,6 +51,7 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
     updateTask, 
     deleteTask, 
     addComment, 
+    deleteComment,
     uploadAttachment, 
     deleteAttachment,
     createSubtask,
@@ -517,6 +518,44 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
       setSubtaskCommentInputMap(prev => ({ ...prev, [subtaskId]: commentText }));
     } finally {
       setIsPostingSubtaskCommentMap(prev => ({ ...prev, [subtaskId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    // Optimistic removal (0ms)
+    setComments(prev => prev.filter(c => c.id !== commentId));
+    try {
+      const res = await deleteComment(commentId, task.id);
+      if (!res.success) {
+        setErrorMessage(res.message || 'Failed to delete comment');
+        await loadTaskExtras(task.id);
+      }
+    } catch (e: any) {
+      setErrorMessage(e?.message || 'Failed to delete comment');
+      await loadTaskExtras(task.id);
+    }
+  };
+
+  const handleDeleteSubtaskComment = async (subtaskId: number, commentId: number) => {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    // Optimistic removal (0ms)
+    setSubtaskCommentsMap(prev => ({
+      ...prev,
+      [subtaskId]: (prev[subtaskId] || []).filter(c => c.id !== commentId)
+    }));
+    setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
+      ...st,
+      comments_count: Math.max(0, (st.comments_count || 1) - 1)
+    } : st));
+
+    try {
+      const res = await deleteComment(commentId, task.id, subtaskId);
+      if (!res.success) {
+        setErrorMessage(res.message || 'Failed to delete comment');
+      }
+    } catch (e: any) {
+      setErrorMessage(e?.message || 'Failed to delete comment');
     }
   };
 
@@ -1255,18 +1294,28 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                                 subtaskCommentsMap[subtask.id].map(c => (
                                   <div key={c.id} className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
                                     <div className="flex items-center justify-between">
-                                      <div className="flex items-center space-x-1.5">
+                                      <div className="flex items-center space-x-1.5 min-w-0">
                                         {c.user?.avatar ? (
-                                          <img src={c.user.avatar} alt={c.user.name} className="w-4 h-4 rounded-full object-cover" />
+                                          <img src={c.user.avatar} alt={c.user.name} className="w-4 h-4 rounded-full object-cover shrink-0" />
                                         ) : (
-                                          <div className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-[9px] flex items-center justify-center uppercase">
+                                          <div className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-[9px] flex items-center justify-center uppercase shrink-0">
                                             {c.user?.name ? c.user.name.charAt(0) : 'U'}
                                           </div>
                                         )}
-                                        <span className="font-bold text-slate-900 dark:text-white text-[11px]">{c.user?.name || 'User'}</span>
+                                        <span className="font-bold text-slate-900 dark:text-white text-[11px] truncate">{c.user?.name || 'User'}</span>
                                         <span className="text-[9px] text-slate-500 font-medium">({c.user?.role || 'MEMBER'})</span>
                                       </div>
-                                      <span className="text-[9px] text-slate-400 font-mono">{c.created_at}</span>
+                                      <div className="flex items-center space-x-1.5 shrink-0">
+                                        <span className="text-[9px] text-slate-400 font-mono">{c.created_at}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteSubtaskComment(subtask.id, c.id)}
+                                          className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                          title="Delete subtask comment"
+                                        >
+                                          <Trash2 className="w-2.5 h-2.5" />
+                                        </button>
+                                      </div>
                                     </div>
                                     <p className="text-slate-700 dark:text-slate-200 text-[11px] leading-relaxed pl-5 break-words">
                                       {renderCommentContent(c.comment)}
@@ -1465,7 +1514,17 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
                           <span className="font-bold text-slate-900 dark:text-white">{c.user?.name || 'User'}</span>
                           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">({c.user?.role || 'MEMBER'})</span>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-mono">{c.created_at}</span>
+                        <div className="flex items-center space-x-1.5 shrink-0">
+                          <span className="text-[10px] text-slate-400 font-mono">{c.created_at}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(c.id)}
+                            className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                            title="Delete comment"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-slate-700 dark:text-slate-200 text-xs leading-relaxed pl-7 break-words">
                         {renderCommentContent(c.comment)}
