@@ -76,10 +76,22 @@ export default function Footer() {
               Quick Links
             </p>
             <ul className="space-y-3">
-              <li><Link href="#home" className="footer-link">Home</Link></li>
-              <li><Link href="#about" className="footer-link">About</Link></li>
-              <li><Link href="#services" className="footer-link">Services</Link></li>
-              <li><Link href="#contact" className="footer-link">Contact</Link></li>
+              <li><Link href="/" className="footer-link">Home</Link></li>
+              <li><Link href="/about" className="footer-link">About</Link></li>
+              <li><Link href="/services" className="footer-link">Services</Link></li>
+              <li><Link href="/works" className="footer-link">Works</Link></li>
+              <li><Link href="/contact" className="footer-link">Contact</Link></li>
+            </ul>
+          </div>
+
+          {/* Legal & Policies */}
+          <div>
+            <p className="text-white font-bold" style={{ fontSize: 16, marginBottom: 22 }}>
+              Legal & Policies
+            </p>
+            <ul className="space-y-3">
+              <li><Link href="/privacy-policy" className="footer-link">Privacy Policy</Link></li>
+              <li><Link href="/terms-and-conditions" className="footer-link">Terms & Conditions</Link></li>
             </ul>
           </div>
 
@@ -101,16 +113,30 @@ export default function Footer() {
 
         {/* Bottom */}
         <div
-          className="flex flex-col items-center gap-6 pb-10 pt-6"
+          className="flex flex-col sm:flex-row items-center justify-between gap-6 pb-10 pt-6"
           style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <div className="flex gap-8">
+          <p className="text-slate-500 text-xs sm:text-sm">
+            © 2026 ShootSide. All rights reserved.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-400 font-medium">
+            <Link href="/privacy-policy" className="hover:text-purple-400 transition-colors">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link href="/terms-and-conditions" className="hover:text-purple-400 transition-colors">
+              Terms & Conditions
+            </Link>
+          </div>
+
+          <div className="flex gap-6">
             <a
               href="https://www.instagram.com/shootside.in/"
               target="_blank"
               className="social-icon"
             >
-              <Instagram size={22} />
+              <Instagram size={20} />
             </a>
 
             <a
@@ -118,14 +144,14 @@ export default function Footer() {
               target="_blank"
               className="social-icon"
             >
-              <Linkedin size={22} />
+              <Linkedin size={20} />
             </a>
 
             <a
               href="mailto:connect.shootside@gmail.com"
               className="social-icon"
             >
-              <Mail size={22} />
+              <Mail size={20} />
             </a>
 
             <a
@@ -133,14 +159,9 @@ export default function Footer() {
               target="_blank"
               className="social-icon"
             >
-              <MessageCircle size={22} />
+              <MessageCircle size={20} />
             </a>
           </div>
-
-
-          <p className="text-slate-500" style={{ fontSize: 14 }}>
-            © 2026 ShootSide. All rights reserved.
-          </p>
         </div>
 
       </div>
