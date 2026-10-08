@@ -5,6 +5,33 @@ import https from 'https';
 const WP_HOST_IP = '69.57.172.207';
 const WP_DOMAIN = 'shootside.in';
 
+const httpAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+  timeout: 15000,
+  keepAliveMsecs: 30000
+});
+
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+  timeout: 15000,
+  keepAliveMsecs: 30000,
+  rejectUnauthorized: false
+});
+
+interface CacheEntry {
+  body: Buffer;
+  statusCode: number;
+  contentType: string;
+  timestamp: number;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60000; // 60 seconds TTL for fast responses
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const resolvedParams = await params;
   return handleProxy(request, resolvedParams.path, 'GET');
@@ -140,6 +167,25 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
       }
     }
 
+    // Invalidate cache on mutations
+    if (method !== 'GET' && method !== 'HEAD') {
+      responseCache.clear();
+    }
+
+    const cacheKey = method === 'GET' ? `${remotePath}:${authHeader || ''}` : null;
+    if (cacheKey) {
+      const cached = responseCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return new NextResponse(new Uint8Array(cached.body), {
+          status: cached.statusCode,
+          headers: {
+            'Content-Type': cached.contentType,
+            'X-Proxy-Cache': 'HIT'
+          }
+        });
+      }
+    }
+
     // Attempt 1: Direct IP HTTP on Port 80
     try {
       const res = await doHttpRequest(
@@ -149,10 +195,20 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
           path: remotePath,
           method: method,
           headers: headers,
+          agent: httpAgent,
           timeout: 8000
         },
         bodyData
       );
+
+      if (cacheKey && res.statusCode >= 200 && res.statusCode < 300) {
+        responseCache.set(cacheKey, {
+          body: res.body,
+          statusCode: res.statusCode,
+          contentType: (res.headers['content-type'] as string) || 'application/json',
+          timestamp: Date.now()
+        });
+      }
 
       return new NextResponse(new Uint8Array(res.body), {
         status: res.statusCode,
@@ -171,6 +227,7 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
             port: 443,
             path: remotePath,
             method: method,
+            agent: httpsAgent,
             headers: {
               ...headers,
               Host: WP_DOMAIN
@@ -179,6 +236,15 @@ async function handleProxy(request: NextRequest, pathArray: string[], method: st
           },
           bodyData
         );
+
+        if (cacheKey && httpsRes.statusCode >= 200 && httpsRes.statusCode < 300) {
+          responseCache.set(cacheKey, {
+            body: httpsRes.body,
+            statusCode: httpsRes.statusCode,
+            contentType: (httpsRes.headers['content-type'] as string) || 'application/json',
+            timestamp: Date.now()
+          });
+        }
 
         return new NextResponse(new Uint8Array(httpsRes.body), {
           status: httpsRes.statusCode,

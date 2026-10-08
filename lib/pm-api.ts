@@ -343,49 +343,71 @@ class PMClient {
     return this.token;
   }
 
+  private inFlight = new Map<string, Promise<any>>();
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; message?: string }> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>)
-    };
+    const method = (options.method || 'GET').toUpperCase();
+    const isGet = method === 'GET';
+    const cacheKey = isGet ? `${endpoint}:${this.token || ''}` : null;
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    if (cacheKey && this.inFlight.has(cacheKey)) {
+      return this.inFlight.get(cacheKey)!;
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers
-      });
+    const exec = (async () => {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string>)
+      };
 
-      const json = await response.json().catch(() => null);
+      if (this.token) {
+        headers['Authorization'] = `Bearer ${this.token}`;
+      }
 
-      if (!response.ok) {
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers
+        });
+
+        const json = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          this.isLiveActive = true;
+          return {
+            success: false,
+            data: undefined,
+            message: (json && json.message) || `Error ${response.status}: ${response.statusText}`
+          };
+        }
+
         this.isLiveActive = true;
-        return {
-          success: false,
-          data: undefined,
-          message: (json && json.message) || `Error ${response.status}: ${response.statusText}`
-        };
-      }
+        return json || { success: true };
+      } catch (err: any) {
+        this.isLiveActive = false;
+        console.warn(`[ShootSide PM] Real API fetch to ${endpoint} (${err.message}).`);
+        
+        // Never bypass authentication on network or server errors
+        if (endpoint.startsWith('/auth')) {
+          return {
+            success: false,
+            message: 'Unable to connect to WordPress server. Please check your connection and try again.'
+          };
+        }
 
-      this.isLiveActive = true;
-      return json || { success: true };
-    } catch (err: any) {
-      this.isLiveActive = false;
-      console.warn(`[ShootSide PM] Real API fetch to ${endpoint} (${err.message}).`);
-      
-      // Never bypass authentication on network or server errors
-      if (endpoint.startsWith('/auth')) {
-        return {
-          success: false,
-          message: 'Unable to connect to WordPress server. Please check your connection and try again.'
-        };
+        return this.handleMockFallback<T>(endpoint, options);
+      } finally {
+        if (cacheKey) {
+          this.inFlight.delete(cacheKey);
+        }
       }
+    })();
 
-      return this.handleMockFallback<T>(endpoint, options);
+    if (cacheKey) {
+      this.inFlight.set(cacheKey, exec);
     }
+
+    return exec;
   }
 
   private async handleMockFallback<T>(endpoint: string, options: RequestInit): Promise<{ success: boolean; data?: T; message?: string }> {

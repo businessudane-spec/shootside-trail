@@ -87,6 +87,34 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [statistics, setStatistics] = useState<PMStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load cache on initial mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const cachedTasks = localStorage.getItem('pm_cache_tasks');
+      const cachedProjects = localStorage.getItem('pm_cache_projects');
+      const cachedUsers = localStorage.getItem('pm_cache_users');
+      const cachedStats = localStorage.getItem('pm_cache_stats');
+
+      if (cachedTasks) setTasks(JSON.parse(cachedTasks));
+      if (cachedProjects) setProjects(JSON.parse(cachedProjects));
+      if (cachedUsers) setUsers(JSON.parse(cachedUsers));
+      if (cachedStats) setStatistics(JSON.parse(cachedStats));
+    } catch (e) {
+      console.warn('Failed to load local PM cache', e);
+    }
+  }, []);
+
+  // Save to cache helper
+  const saveCache = (key: string, data: any) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.warn('Failed to write to local PM cache', e);
+    }
+  };
+
   // Filters & Selected State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -111,7 +139,11 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    setIsLoading(true);
+    // Only show full loading if we have no cached tasks yet
+    if (tasks.length === 0) {
+      setIsLoading(true);
+    }
+
     try {
       const [pRes, tRes, uRes, vRes, nRes, aRes, dRes, sRes] = await Promise.all([
         pmApi.getProjects(),
@@ -124,7 +156,10 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         pmApi.getStatistics()
       ]);
 
-      if (pRes.success && pRes.data) setProjects(pRes.data);
+      if (pRes.success && pRes.data) {
+        setProjects(pRes.data);
+        saveCache('pm_cache_projects', pRes.data);
+      }
       if (tRes.success && tRes.data) {
         const normalized = tRes.data.map(t => ({
           ...t,
@@ -132,8 +167,12 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           priority: normalizePriority(t.priority)
         }));
         setTasks(normalized);
+        saveCache('pm_cache_tasks', normalized);
       }
-      if (uRes.success && uRes.data) setUsers(uRes.data);
+      if (uRes.success && uRes.data) {
+        setUsers(uRes.data);
+        saveCache('pm_cache_users', uRes.data);
+      }
       if (vRes.success && vRes.data) setVaultItems(vRes.data);
       if (nRes.success && nRes.data) {
         setNotifications(nRes.data.items || []);
@@ -141,17 +180,56 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       if (aRes.success && aRes.data) setActivityLogs(aRes.data as PMActivityLog[]);
       if (dRes.success && dRes.data) setDeletedItems(dRes.data as DeletedItemsResponse);
-      if (sRes.success && sRes.data) setStatistics(sRes.data);
+      if (sRes.success && sRes.data) {
+        setStatistics(sRes.data);
+        saveCache('pm_cache_stats', sRes.data);
+      }
     } catch (err) {
       console.error('Error refreshing PM data:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, tasks.length]);
+
+  const refreshBackground = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [tRes, pRes, sRes, nRes] = await Promise.all([
+        pmApi.getTasks(),
+        pmApi.getProjects(),
+        pmApi.getStatistics(),
+        pmApi.getNotifications()
+      ]);
+
+      if (tRes.success && tRes.data) {
+        const normalized = tRes.data.map(t => ({
+          ...t,
+          status: normalizeTaskStatus(t.status),
+          priority: normalizePriority(t.priority)
+        }));
+        setTasks(normalized);
+        saveCache('pm_cache_tasks', normalized);
+      }
+      if (pRes.success && pRes.data) {
+        setProjects(pRes.data);
+        saveCache('pm_cache_projects', pRes.data);
+      }
+      if (sRes.success && sRes.data) {
+        setStatistics(sRes.data);
+        saveCache('pm_cache_stats', sRes.data);
+      }
+      if (nRes.success && nRes.data) {
+        setNotifications(nRes.data.items || []);
+        setUnreadNotificationsCount(nRes.data.unread_count || 0);
+      }
+    } catch (err) {
+      console.error('Background refresh error:', err);
+    }
+  }, [user]);
 
   useEffect(() => {
     refreshAll();
-  }, [refreshAll]);
+  }, [user]);
 
   // Project Actions
   const createProject = async (data: Partial<PMProject>) => {
@@ -160,7 +238,10 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     const res = await pmApi.createProject(data);
     if (res.success) {
-      await refreshAll();
+      if (res.data) {
+        setProjects(prev => [res.data!, ...prev]);
+      }
+      refreshBackground();
       return { success: true };
     }
     return { success: false, message: res.message || 'Failed to create project' };
@@ -170,11 +251,16 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!isAdmin) {
       return { success: false, message: 'Only Administrators can edit projects.' };
     }
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
     const res = await pmApi.updateProject(id, data);
     if (res.success) {
-      await refreshAll();
+      if (res.data) {
+        setProjects(prev => prev.map(p => p.id === id ? { ...p, ...res.data } : p));
+      }
+      refreshBackground();
       return { success: true };
     }
+    refreshBackground();
     return { success: false, message: res.message || 'Failed to update project' };
   };
 
@@ -182,11 +268,15 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!isAdmin) {
       return { success: false, message: 'Only Administrators can delete projects.' };
     }
+    setProjects(prev => prev.filter(p => p.id !== id));
+    if (selectedProjectId === id) setSelectedProjectId(null);
+    if (selectedProject?.id === id) setSelectedProject(null);
     const res = await pmApi.deleteProject(id);
     if (res.success) {
-      await refreshAll();
+      refreshBackground();
       return { success: true };
     }
+    refreshBackground();
     return { success: false, message: res.message || 'Failed to delete project' };
   };
 
@@ -196,7 +286,7 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     const res = await pmApi.restoreItem('project', id);
     if (res.success) {
-      await refreshAll();
+      refreshAll();
       return { success: true };
     }
     return { success: false, message: res.message || 'Failed to restore project' };
@@ -206,25 +296,64 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const createTask = async (data: Partial<PMTask>) => {
     const res = await pmApi.createTask(data);
     if (res.success) {
-      await refreshAll();
+      if (res.data) {
+        const normalized: PMTask = {
+          ...res.data,
+          status: normalizeTaskStatus(res.data.status),
+          priority: normalizePriority(res.data.priority)
+        };
+        setTasks(prev => [normalized, ...prev]);
+      }
+      refreshBackground();
       return { success: true };
     }
     return { success: false, message: res.message || 'Failed to create task' };
   };
 
   const updateTask = async (id: number, data: Partial<PMTask>) => {
+    // Optimistic local update so UI responds with 0 latency
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === id
+          ? {
+              ...t,
+              ...data,
+              status: data.status ? normalizeTaskStatus(data.status) : t.status,
+              priority: data.priority ? normalizePriority(data.priority) : t.priority
+            }
+          : t
+      )
+    );
+    if (selectedTask?.id === id) {
+      setSelectedTask(prev =>
+        prev
+          ? {
+              ...prev,
+              ...data,
+              status: data.status ? normalizeTaskStatus(data.status) : prev.status,
+              priority: data.priority ? normalizePriority(data.priority) : prev.priority
+            }
+          : null
+      );
+    }
+
     const res = await pmApi.updateTask(id, data);
     if (res.success) {
-      await refreshAll();
-      if (selectedTask?.id === id && res.data) {
-        setSelectedTask({
+      if (res.data) {
+        const normalized: PMTask = {
           ...res.data,
           status: normalizeTaskStatus(res.data.status),
           priority: normalizePriority(res.data.priority)
-        });
+        };
+        setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...normalized } : t)));
+        if (selectedTask?.id === id) {
+          setSelectedTask(prev => (prev ? { ...prev, ...normalized } : null));
+        }
       }
+      refreshBackground();
       return { success: true };
     }
+    refreshBackground();
     return { success: false, message: res.message || 'Failed to update task' };
   };
 
@@ -232,14 +361,16 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!isAdmin) {
       return { success: false, message: 'Only Administrators can delete tasks.' };
     }
+    setTasks(prev => prev.filter(t => t.id !== id));
+    if (selectedTask?.id === id) {
+      setSelectedTask(null);
+    }
     const res = await pmApi.deleteTask(id);
     if (res.success) {
-      await refreshAll();
-      if (selectedTask?.id === id) {
-        setSelectedTask(null);
-      }
+      refreshBackground();
       return { success: true };
     }
+    refreshBackground();
     return { success: false, message: res.message || 'Failed to delete task' };
   };
 
@@ -249,7 +380,7 @@ export const PMDataProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     const res = await pmApi.restoreItem('task', id);
     if (res.success) {
-      await refreshAll();
+      refreshAll();
       return { success: true };
     }
     return { success: false, message: res.message || 'Failed to restore task' };

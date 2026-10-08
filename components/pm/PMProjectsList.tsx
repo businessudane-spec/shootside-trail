@@ -177,19 +177,7 @@ export const PMProjectsList: React.FC<PMProjectsListProps> = ({
                 </p>
               </div>
 
-              {/* Progress bar */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-[11px] text-slate-500 font-medium">
-                  <span>Deliverables Progress</span>
-                  <span className="font-bold text-slate-900">{project.progress}%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
+
 
               {/* Team avatars & Task counter */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">

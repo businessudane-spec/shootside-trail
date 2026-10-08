@@ -1,9 +1,25 @@
 import Script from "next/script";
+import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { Poppins, Barlow_Condensed, Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Shootside",
+  description: "Shootside - Film & Media Production",
+  icons: {
+    icon: [
+      { url: "/logo-sh.png", href: "/logo-sh.png" },
+    ],
+    shortcut: ["/logo-sh.png"],
+    apple: [
+      { url: "/logo-sh.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/manifest.json",
+};
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 

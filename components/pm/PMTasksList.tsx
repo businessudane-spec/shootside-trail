@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
-import { PMTask } from '@/lib/pm-types';
+import { PMTask, normalizeTaskStatus, normalizePriority } from '@/lib/pm-types';
 
 interface PMTasksListProps {
   filterMyTasksOnly?: boolean;
@@ -34,6 +34,8 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
   const {
     tasks,
     projects,
+    users,
+    isLoading,
     deleteTask,
     searchQuery,
     setSearchQuery,
@@ -42,7 +44,9 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
     selectedPriority,
     setSelectedPriority,
     selectedProjectId,
-    setSelectedProjectId
+    setSelectedProjectId,
+    selectedMemberId,
+    setSelectedMemberId
   } = usePMData();
 
   const [sortBy, setSortBy] = useState<'due_date' | 'priority' | 'progress' | 'created_at'>('created_at');
@@ -54,15 +58,36 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
       (task.subtasks && task.subtasks.some(st => (typeof st.assigned_to === 'object' ? st.assigned_to?.id : st.assigned_to) === user?.id || st.assigned_to_id === user?.id));
     if (filterMyTasksOnly && !isAssignedToUser) return false;
     if (selectedProjectId && task.project_id !== selectedProjectId) return false;
+
+    // Member / Assignee filter (0 = Unassigned)
+    if (selectedMemberId === 0) {
+      if (task.assigned_to_id && task.assigned_to_id !== 0) return false;
+    } else if (selectedMemberId !== null && selectedMemberId > 0) {
+      const isAssignedToMember = 
+        task.assigned_to_id === selectedMemberId || 
+        (task.subtasks && task.subtasks.some(st => (typeof st.assigned_to === 'object' ? st.assigned_to?.id : st.assigned_to) === selectedMemberId || st.assigned_to_id === selectedMemberId));
+      if (!isAssignedToMember) return false;
+    }
+
+    // Status filter
     if (selectedStatus === 'all_with_completed') {
       // Show all tasks including completed
     } else if (selectedStatus) {
-      if (task.status !== selectedStatus) return false;
+      if (normalizeTaskStatus(task.status) !== normalizeTaskStatus(selectedStatus)) return false;
     } else {
       // Default: hide completed tasks from the active task list
-      if (task.status === 'Completed') return false;
+      if (normalizeTaskStatus(task.status) === 'Completed') return false;
     }
-    if (selectedPriority && task.priority !== selectedPriority) return false;
+
+    // Priority & Overdue filter
+    if (selectedPriority === 'overdue_urgent') {
+      const overdue = task.due_date && new Date(task.due_date) < new Date() && normalizeTaskStatus(task.status) !== 'Completed';
+      const urgent = task.priority === 'Urgent';
+      if (!overdue && !urgent) return false;
+    } else if (selectedPriority) {
+      if (task.priority !== selectedPriority) return false;
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = task.title.toLowerCase().includes(q);
@@ -146,6 +171,7 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Projects Filter */}
           <select
             value={selectedProjectId || ''}
             onChange={e => setSelectedProjectId(e.target.value ? Number(e.target.value) : null)}
@@ -159,10 +185,26 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
             ))}
           </select>
 
+          {/* Assignee Filter */}
+          <select
+            value={selectedMemberId === null ? '' : String(selectedMemberId)}
+            onChange={e => setSelectedMemberId(e.target.value === '' ? null : Number(e.target.value))}
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none font-medium"
+          >
+            <option value="">All Assignees</option>
+            <option value="0">Unassigned Only</option>
+            {users.map(u => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Status Filter */}
           <select
             value={selectedStatus}
             onChange={e => setSelectedStatus(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none font-medium"
           >
             <option value="">Active Tasks (Default)</option>
             <option value="all_with_completed">All Tasks (Inc. Completed)</option>
@@ -173,17 +215,35 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
             <option value="On Hold">On Hold</option>
           </select>
 
+          {/* Priority / Overdue Filter */}
           <select
             value={selectedPriority}
             onChange={e => setSelectedPriority(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none font-medium"
           >
             <option value="">All Priorities</option>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
+            <option value="overdue_urgent">Overdue / Urgent</option>
+            <option value="Urgent">Urgent Only</option>
             <option value="High">High</option>
-            <option value="Urgent">Urgent</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
           </select>
+
+          {/* Clear Filters button if any active */}
+          {(selectedProjectId !== null || selectedMemberId !== null || selectedStatus !== '' || selectedPriority !== '' || searchQuery.trim() !== '') && (
+            <button
+              onClick={() => {
+                setSelectedProjectId(null);
+                setSelectedMemberId(null);
+                setSelectedStatus('');
+                setSelectedPriority('');
+                setSearchQuery('');
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -204,9 +264,25 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sortedTasks.length === 0 ? (
+              {isLoading && tasks.length === 0 ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-4 px-4">
+                      <div className="h-4 bg-slate-200 rounded w-48 mb-2"></div>
+                      <div className="h-3 bg-slate-100 rounded w-24"></div>
+                    </td>
+                    <td className="py-4 px-4"><div className="h-3.5 bg-slate-200 rounded w-28"></div></td>
+                    <td className="py-4 px-4"><div className="h-6 w-6 rounded-full bg-slate-200"></div></td>
+                    <td className="py-4 px-4"><div className="h-5 bg-slate-200 rounded-full w-20"></div></td>
+                    <td className="py-4 px-4"><div className="h-5 bg-slate-200 rounded-full w-16"></div></td>
+                    <td className="py-4 px-4"><div className="h-2 bg-slate-200 rounded w-20"></div></td>
+                    <td className="py-4 px-4"><div className="h-3.5 bg-slate-200 rounded w-20"></div></td>
+                    {isAdmin && <td className="py-4 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-6 ml-auto"></div></td>}
+                  </tr>
+                ))
+              ) : sortedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-xs text-slate-400">
+                  <td colSpan={isAdmin ? 8 : 7} className="py-12 text-center text-xs text-slate-400">
                     <ListTodo className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                     No tasks found matching your filters.
                   </td>
@@ -227,7 +303,7 @@ export const PMTasksList: React.FC<PMTasksListProps> = ({
                             <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                               {task.title}
                             </p>
-                            {task.parent_task_id && Number(task.parent_task_id) > 0 && (
+                            {Number(task.parent_task_id) > 0 && (
                               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
                                 🔗 Child of #{task.parent_task_id}
                               </span>

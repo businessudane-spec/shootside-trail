@@ -27,6 +27,24 @@ export const PMCreateProjectModal: React.FC<PMCreateProjectModalProps> = ({ isOp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const resetForm = () => {
+    setProjectName('');
+    setClientName('');
+    setDescription('');
+    setStartDate('');
+    setDeadline('');
+    setProjectManagerId(user?.id || 1);
+    setSelectedMemberIds([]);
+    setPriority('Medium');
+    setStatus('Active');
+    setError(null);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +72,7 @@ export const PMCreateProjectModal: React.FC<PMCreateProjectModalProps> = ({ isOp
     setIsSubmitting(false);
 
     if (res.success) {
+      resetForm();
       onClose();
     } else {
       setError(res.message || 'Failed to create project');
@@ -82,7 +101,7 @@ export const PMCreateProjectModal: React.FC<PMCreateProjectModalProps> = ({ isOp
           </div>
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-xl bg-white hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200 shadow-2xs"
           >
             <X className="w-4 h-4" />
@@ -231,7 +250,7 @@ export const PMCreateProjectModal: React.FC<PMCreateProjectModalProps> = ({ isOp
           <div className="pt-4 border-t border-slate-200 flex items-center justify-end space-x-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-xs font-bold border border-slate-200 cursor-pointer shadow-2xs"
             >
               Cancel

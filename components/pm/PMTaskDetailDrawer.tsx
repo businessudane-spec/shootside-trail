@@ -80,9 +80,9 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   const [progress, setProgress] = useState(task.progress);
 
   const [activeTab, setActiveTab] = useState<'comments' | 'attachments' | 'subtasks' | 'merged' | 'audit'>('comments');
-  const [subtasks, setSubtasks] = useState<PMSubtask[]>([]);
-  const [comments, setComments] = useState<PMComment[]>([]);
-  const [attachments, setAttachments] = useState<PMAttachment[]>([]);
+  const [subtasks, setSubtasks] = useState<PMSubtask[]>(task.subtasks || []);
+  const [comments, setComments] = useState<PMComment[]>(task.comments || []);
+  const [attachments, setAttachments] = useState<PMAttachment[]>(task.attachments || []);
   const [taskActivities, setTaskActivities] = useState<PMActivityLog[]>([]);
   const [childTasks, setChildTasks] = useState<PMTask[]>(task.child_tasks || []);
   const [childCommentsMap, setChildCommentsMap] = useState<Record<number, PMComment[]>>({});
@@ -135,18 +135,21 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
   useEffect(() => {
     setTitle(task.title);
     setDescription(task.description);
-    setStatus(task.status);
-    setPriority(task.priority);
+    setStatus(normalizeTaskStatus(task.status));
+    setPriority(normalizePriority(task.priority));
     setAssignedToId(task.assigned_to_id);
     setStartDate(task.start_date || '');
     setDueDate(task.due_date || '');
     setEstimatedHours(task.estimated_hours);
     setActualHours(task.actual_hours);
     setProgress(task.progress);
-    setChildTasks(task.child_tasks || []);
+    if (task.subtasks) setSubtasks(task.subtasks);
+    if (task.comments) setComments(task.comments);
+    if (task.attachments) setAttachments(task.attachments);
+    if (task.child_tasks) setChildTasks(task.child_tasks);
 
     loadTaskExtras(task.id);
-  }, [task]);
+  }, [task.id]);
 
   const loadTaskExtras = async (taskId: number) => {
     try {
@@ -312,7 +315,6 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
 
     if (res.success) {
       setSaveSuccess(true);
-      await loadTaskExtras(task.id);
       setTimeout(() => setSaveSuccess(false), 3000);
     } else {
       setErrorMessage(res.message || 'Failed to update task');
@@ -1000,7 +1002,7 @@ export const PMTaskDetailDrawer: React.FC<PMTaskDetailDrawerProps> = ({ task, on
         {/* Main Drawer Scrollable Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
           {/* Parent Task Banner if this task is a merged child */}
-          {task.parent_task_id && Number(task.parent_task_id) > 0 && (
+          {Number(task.parent_task_id) > 0 && (
             <div className="p-3.5 rounded-xl bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/40 dark:to-indigo-950/40 border border-purple-200 dark:border-purple-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">

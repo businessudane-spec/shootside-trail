@@ -35,7 +35,19 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
   onNavigateView
 }) => {
   const { user, isAdmin } = usePMAuth();
-  const { projects, tasks, users, statistics, setSelectedStatus, setSelectedPriority } = usePMData();
+  const {
+    projects,
+    tasks,
+    users,
+    statistics,
+    isLoading,
+    setSelectedStatus,
+    setSelectedPriority,
+    setSelectedProjectId,
+    setSelectedMemberId
+  } = usePMData();
+
+  const isInitialLoading = isLoading && tasks.length === 0;
 
   const totalProjects = statistics?.projects.total ?? projects.length;
   const activeProjects = statistics?.projects.active ?? projects.filter(p => p.status === 'Active').length;
@@ -105,6 +117,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
           onClick={() => {
             setSelectedStatus('');
             setSelectedPriority('');
+            setSelectedProjectId(null);
+            setSelectedMemberId(0);
             onNavigateView('tasks_list');
           }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
@@ -115,10 +129,14 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
               <UserX className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{unassignedTasks}</span>
-            <span className="text-xs text-slate-400">/ {totalTasks} total</span>
-          </div>
+          {isInitialLoading ? (
+            <div className="h-8 w-20 bg-slate-200 animate-pulse rounded-lg my-1"></div>
+          ) : (
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{unassignedTasks}</span>
+              <span className="text-xs text-slate-400">/ {totalTasks} total</span>
+            </div>
+          )}
           <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 flex items-center space-x-1 font-semibold">
             <span>{unassignedTasks > 0 ? `${unassignedTasks} need assignment` : 'All active tasks assigned'}</span>
             <ArrowUpRight className="w-3 h-3" />
@@ -130,6 +148,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
           onClick={() => {
             setSelectedStatus('In Progress');
             setSelectedPriority('');
+            setSelectedProjectId(null);
+            setSelectedMemberId(null);
             onNavigateView('tasks_list');
           }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
@@ -140,11 +160,25 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{inProgressTasks}</span>
-            <span className="text-xs text-slate-400">/ {totalTasks} total</span>
-          </div>
-          <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-2 flex items-center space-x-1 font-semibold">
+          {isInitialLoading ? (
+            <div className="h-8 w-20 bg-slate-200 animate-pulse rounded-lg my-1"></div>
+          ) : (
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{inProgressTasks}</span>
+              <span className="text-xs text-slate-400">/ {totalTasks} total</span>
+            </div>
+          )}
+          <p 
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedStatus('Review');
+              setSelectedPriority('');
+              setSelectedProjectId(null);
+              setSelectedMemberId(null);
+              onNavigateView('tasks_list');
+            }}
+            className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-2 flex items-center space-x-1 font-semibold hover:underline"
+          >
             <span>{reviewTasks} in review</span>
             <ArrowUpRight className="w-3 h-3" />
           </p>
@@ -155,6 +189,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
           onClick={() => {
             setSelectedStatus('Completed');
             setSelectedPriority('');
+            setSelectedProjectId(null);
+            setSelectedMemberId(null);
             onNavigateView('tasks_list');
           }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
@@ -165,12 +201,16 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{completedTasks}</span>
-            <span className="text-xs text-slate-400 font-semibold">
-              ({totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%)
-            </span>
-          </div>
+          {isInitialLoading ? (
+            <div className="h-8 w-20 bg-slate-200 animate-pulse rounded-lg my-1"></div>
+          ) : (
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{completedTasks}</span>
+              <span className="text-xs text-slate-400 font-semibold">
+                ({totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%)
+              </span>
+            </div>
+          )}
           <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 flex items-center space-x-1 font-semibold">
             <span>Click to view all completed tasks</span>
             <ArrowUpRight className="w-3 h-3" />
@@ -180,7 +220,10 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
         {/* Overdue / Urgent Alert */}
         <div
           onClick={() => {
-            setSelectedPriority('Urgent');
+            setSelectedStatus('');
+            setSelectedPriority('overdue_urgent');
+            setSelectedProjectId(null);
+            setSelectedMemberId(null);
             onNavigateView('tasks_list');
           }}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 hover:shadow-md transition-all cursor-pointer group shadow-xs"
@@ -191,12 +234,26 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
               <Flame className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2">
-            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{overdueTasks}</span>
-            <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">needs attention</span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium">
-            My active tasks: {myTasks.length}
+          {isInitialLoading ? (
+            <div className="h-8 w-20 bg-slate-200 animate-pulse rounded-lg my-1"></div>
+          ) : (
+            <div className="flex items-baseline space-x-2">
+              <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">{overdueTasks}</span>
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">needs attention</span>
+            </div>
+          )}
+          <p 
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedStatus('');
+              setSelectedPriority('');
+              setSelectedProjectId(null);
+              setSelectedMemberId(user?.id ?? null);
+              onNavigateView('tasks_list');
+            }}
+            className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 font-medium hover:text-rose-600 transition-colors"
+          >
+            My active tasks: {myTasks.length} ↗
           </p>
         </div>
       </div>
@@ -248,22 +305,8 @@ export const PMDashboard: React.FC<PMDashboardProps> = ({
                   </span>
                 </div>
 
-                {/* Progress bar */}
-                <div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mb-1 font-medium">
-                    <span>Overall Progress</span>
-                    <span className="font-bold text-slate-900">{p.progress}%</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500"
-                      style={{ width: `${p.progress}%` }}
-                    />
-                  </div>
-                </div>
-
                 {/* Meta footer */}
-                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
                   <div className="flex items-center space-x-2">
                     <img
                       src={p.project_manager?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}

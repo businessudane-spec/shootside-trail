@@ -33,7 +33,7 @@ const COLUMNS: { status: TaskStatus; label: string; color: string; dot: string; 
 ];
 
 export const PMKanbanBoard: React.FC<PMKanbanBoardProps> = ({ onSelectTask, openCreateTask }) => {
-  const { tasks, updateTask, selectedProjectId, selectedStatus, selectedPriority, searchQuery } = usePMData();
+  const { tasks, updateTask, selectedProjectId, selectedStatus, selectedPriority, searchQuery, isLoading } = usePMData();
   const [viewMode, setViewMode] = useState<'scroll' | 'stacked'>('scroll');
   const [activeStageFilter, setActiveStageFilter] = useState<string>('all');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -230,7 +230,18 @@ export const PMKanbanBoard: React.FC<PMKanbanBoardProps> = ({ onSelectTask, open
 
                 {/* Tasks List */}
                 <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-[140px]">
-                  {colTasks.length === 0 ? (
+                  {isLoading && tasks.length === 0 ? (
+                    <div className="space-y-3 animate-pulse">
+                      <div className="h-28 bg-white/70 rounded-xl border border-slate-200/60 p-3.5 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/2"></div>
+                      </div>
+                      <div className="h-28 bg-white/70 rounded-xl border border-slate-200/60 p-3.5 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  ) : colTasks.length === 0 ? (
                     <div className="py-10 text-center text-[11px] text-slate-400 border border-dashed border-slate-300 rounded-xl bg-white/50 font-medium">
                       No tasks in this stage
                     </div>
@@ -265,7 +276,18 @@ export const PMKanbanBoard: React.FC<PMKanbanBoardProps> = ({ onSelectTask, open
 
                 {/* Tasks List */}
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-                  {colTasks.length === 0 ? (
+                  {isLoading && tasks.length === 0 ? (
+                    <div className="space-y-3 animate-pulse">
+                      <div className="h-28 bg-white/70 rounded-xl border border-slate-200/60 p-3.5 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/2"></div>
+                      </div>
+                      <div className="h-28 bg-white/70 rounded-xl border border-slate-200/60 p-3.5 space-y-2">
+                        <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  ) : colTasks.length === 0 ? (
                     <div className="py-8 text-center text-[11px] text-slate-400 border border-dashed border-slate-300 rounded-xl bg-white/50 font-medium">
                       No tasks in this stage
                     </div>
@@ -345,7 +367,7 @@ function renderTaskCard(
           </div>
         )}
 
-        {task.parent_task_id && Number(task.parent_task_id) > 0 && (
+        {Number(task.parent_task_id) > 0 && (
           <div className="flex items-center space-x-1 text-[9px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
             <GitMerge className="w-3 h-3 text-purple-600" />
             <span>Child of #{task.parent_task_id}</span>

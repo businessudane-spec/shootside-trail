@@ -113,14 +113,10 @@ export const PMProjectDetail: React.FC<PMProjectDetailProps> = ({
         </div>
 
         {/* Progress and metrics bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
-          <div className="space-y-1">
-            <span className="text-[11px] text-slate-500 font-medium">Overall Progress</span>
-            <p className="text-2xl font-extrabold text-blue-600">{project.progress}%</p>
-          </div>
+        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
           <div className="space-y-1">
             <span className="text-[11px] text-slate-500 font-medium">Project Manager</span>
-            <p className="text-xs font-bold text-slate-900 truncate">{project.project_manager?.name || 'None'}</p>
+            <p className="text-sm font-bold text-slate-900 truncate">{project.project_manager?.name || 'None'}</p>
           </div>
           <div className="space-y-1">
             <span className="text-[11px] text-slate-500 font-medium">Total Tasks</span>
