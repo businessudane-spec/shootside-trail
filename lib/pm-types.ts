@@ -99,6 +99,8 @@ export interface PMTask {
   subtasks_count?: number;
   subtasks_completed_count?: number;
   subtasks?: PMSubtask[];
+  comments?: PMComment[];
+  attachments?: PMAttachment[];
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;

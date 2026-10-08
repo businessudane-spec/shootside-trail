@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import http from 'http';
 import https from 'https';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const WP_HOST_IP = '69.57.172.207';
 const WP_DOMAIN = 'shootside.in';
 
