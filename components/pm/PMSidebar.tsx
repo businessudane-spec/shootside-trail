@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Menu,
   CheckCircle2,
-  KeyRound
+  KeyRound,
+  BadgeIndianRupee
 } from 'lucide-react';
 import { usePMAuth } from '@/lib/pm-auth-context';
 import { usePMData } from '@/lib/pm-data-context';
@@ -34,6 +35,7 @@ export type PMView =
   | 'calendar'
   | 'team'
   | 'vault'
+  | 'salary'
   | 'notifications'
   | 'reports'
   | 'admin_activity'
@@ -249,6 +251,19 @@ export const PMSidebar: React.FC<PMSidebarProps> = ({
             >
               <KeyRound className="w-4 h-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
               {!isCollapsed && <span>Company Vault</span>}
+            </button>
+
+            <button
+              onClick={() => handleNav('salary')}
+              title="Role & Salary Compensation Reference"
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-3'} py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'salary'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <BadgeIndianRupee className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              {!isCollapsed && <span>Salary Structure</span>}
             </button>
 
             <button

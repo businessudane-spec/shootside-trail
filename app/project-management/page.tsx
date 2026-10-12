@@ -14,6 +14,7 @@ import { PMKanbanBoard } from '@/components/pm/PMKanbanBoard';
 import { PMCalendarView } from '@/components/pm/PMCalendarView';
 import { PMTeamView } from '@/components/pm/PMTeamView';
 import { PMVaultView } from '@/components/pm/PMVaultView';
+import { PMSalaryGuide } from '@/components/pm/PMSalaryGuide';
 import { PMNotificationsView } from '@/components/pm/PMNotificationsView';
 import { PMReports } from '@/components/pm/PMReports';
 import { PMActivityLog } from '@/components/pm/PMActivityLog';
@@ -175,6 +176,8 @@ function PMAppContent() {
                 {currentView === 'team' && <PMTeamView />}
 
                 {currentView === 'vault' && <PMVaultView />}
+
+                {currentView === 'salary' && <PMSalaryGuide />}
 
                 {currentView === 'notifications' && <PMNotificationsView onSelectTask={handleSelectTask} />}
 
