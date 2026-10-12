@@ -390,7 +390,7 @@ export const PMSalaryGuide: React.FC = () => {
               <span className="text-[10px] font-bold text-rose-700 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
                 OFFICIAL POLICY PDF
               </span>
-              <span className="text-xs text-slate-400 font-medium">Partner-Salary-and-Work-Policy-Updated.pdf</span>
+              <span className="text-xs text-slate-400 font-medium">Partner-Salary-and-Work-Policy-Final.pdf</span>
             </div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">
               Partner Salary and Work Policy
@@ -410,8 +410,8 @@ export const PMSalaryGuide: React.FC = () => {
             <span>View Policy PDF</span>
           </button>
           <a
-            href="/Partner-Salary-and-Work-Policy-Updated.pdf"
-            download="Partner-Salary-and-Work-Policy-Updated.pdf"
+            href="/Partner-Salary-and-Work-Policy-Final.pdf"
+            download="Partner-Salary-and-Work-Policy-Final.pdf"
             className="flex-1 md:flex-initial px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
@@ -802,7 +802,7 @@ export const PMSalaryGuide: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Partner-Salary-and-Work-Policy-Updated.pdf
+                    Partner-Salary-and-Work-Policy-Final.pdf
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">Official ShootSide Policy Reference</p>
                 </div>
@@ -810,7 +810,7 @@ export const PMSalaryGuide: React.FC = () => {
 
               <div className="flex items-center space-x-2">
                 <a
-                  href="/Partner-Salary-and-Work-Policy-Updated.pdf"
+                  href="/Partner-Salary-and-Work-Policy-Final.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold flex items-center space-x-1"
@@ -820,8 +820,8 @@ export const PMSalaryGuide: React.FC = () => {
                   <span className="hidden sm:inline">New Tab</span>
                 </a>
                 <a
-                  href="/Partner-Salary-and-Work-Policy-Updated.pdf"
-                  download="Partner-Salary-and-Work-Policy-Updated.pdf"
+                  href="/Partner-Salary-and-Work-Policy-Final.pdf"
+                  download="Partner-Salary-and-Work-Policy-Final.pdf"
                   className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center space-x-1 shadow-xs"
                   title="Download PDF"
                 >
@@ -841,7 +841,7 @@ export const PMSalaryGuide: React.FC = () => {
             {/* Embedded PDF iframe */}
             <div className="flex-1 w-full bg-slate-100 dark:bg-slate-950 p-2">
               <iframe
-                src="/Partner-Salary-and-Work-Policy-Updated.pdf#toolbar=1"
+                src="/Partner-Salary-and-Work-Policy-Final.pdf#toolbar=1"
                 className="w-full h-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white"
                 title="Partner Salary and Work Policy PDF"
               />
